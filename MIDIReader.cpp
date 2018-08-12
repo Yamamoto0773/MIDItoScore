@@ -24,6 +24,21 @@ namespace midireader {
 
 
 
+	bool operator==(unsigned char L, MetaEvent R) {
+		return (L == static_cast<unsigned char>(R));
+	}
+
+	bool operator!=(unsigned char L, MetaEvent R) {
+		return !(L == R);
+	}
+
+	bool operator==(unsigned char L, MidiEvent R) {
+		return (L == static_cast<unsigned char>(R));
+	}
+
+	bool operator!=(unsigned char L, MidiEvent R) {
+		return !(L == R);
+	}
 
 
 	bool Success(Status s) { return static_cast<int>(s) >= 0; };
@@ -61,14 +76,18 @@ namespace midireader {
 		if (!midi.is_open())
 			return Status::E_SET_NOFILE;
 
-		
+
 		loadHeader();
 
 
+		for (int i = 0; i < header.numofTrack; i++) {
+			loadTrack();
+
+		}
 
 
-		
-		
+
+
 
 		return Status::S_OK;
 	}
@@ -77,15 +96,21 @@ namespace midireader {
 		return header;
 	}
 
+	const std::vector<NoteEvent>& MIDIReader::getNoteEvent() {
+		return noteEvent;
+	}
+
 
 	void MIDIReader::close() {
 		midi.close();
-
+		noteEvent.clear();
 
 	}
 
 	int MIDIReader::read(std::string & str, size_t byte) {
 		char ch;
+
+		eraseAll(str);
 
 		size_t i;
 		for (i = 0; i < byte; i++) {
@@ -95,6 +120,28 @@ namespace midireader {
 
 
 		return i;
+	}
+
+	int MIDIReader::readVariableLenNumber(long & num) {
+		num = 0;
+		int byteCnt = 0;
+
+		while (true) {
+			char ch;
+
+			midi.read(&ch, 1);
+			byteCnt++;
+
+			num <<= 7;
+			num |= (ch & 0b0111'1111);
+
+			if (!(ch >> 7)) {
+				// if 7th bit is 0, exit from loop
+				break;
+			}
+		}
+
+		return byteCnt;
 	}
 
 	void MIDIReader::eraseAll(std::string & str) {
@@ -109,14 +156,13 @@ namespace midireader {
 		read(chunk, 4);
 
 		// get chunk length
-		eraseAll(tmp);
 		read(tmp, 4);
 		int chunkLength = btoi(tmp);
+
 
 		if (chunk == "MThd") {
 
 			// check midi format
-			eraseAll(tmp);
 			read(tmp, 2);
 			int format = btoi(tmp);
 			if (format == 2) {
@@ -126,13 +172,11 @@ namespace midireader {
 
 
 			// get the number of tracks
-			eraseAll(tmp);
 			read(tmp, 2);
 			int numofTrack = btoi(tmp);
 
 
 			// check the resolution unit
-			eraseAll(tmp);
 			read(tmp, 2);
 			int resolutionUnit = btoi(tmp);
 			if (resolutionUnit >> 15) {
@@ -142,9 +186,9 @@ namespace midireader {
 
 
 
-			header.format			= format;
-			header.numofTrack		= numofTrack;
-			header.resolutionUnit	= resolutionUnit >> 1;
+			header.format = format;
+			header.numofTrack = numofTrack;
+			header.resolutionUnit = resolutionUnit >> 1;
 
 
 		} else {
@@ -154,39 +198,118 @@ namespace midireader {
 		return Status::S_OK;
 	}
 
+	Status MIDIReader::loadTrack() {
+
+		// get chunk name
+		std::string chunk;
+		read(chunk, 4);
+
+		// get chunk data length
+		std::string tmp;
+		read(tmp, 4);
+		long chunkLength = btoi(tmp);
 
 
-	/*
-	`可変長数値をファイルから取得
-	戻り値は固定長数値
-	*/
-	int readVariableLengthNum(std::ifstream &ifs, int *byteCnt) {
-		if (!ifs) return 0;
-		if (byteCnt) *byteCnt = 0;
+		if (chunk != "MTrk")
+			return Status::E_INVALID_FILE;
 
-		int n = 0;
-		while (true) {
-			char tmp = 0;
 
-			ifs.read(&tmp, 1);
-			if (byteCnt) (*byteCnt)++;
+		long totalTime = 0;
+		while (1) {
 
-			int tmp2 = (int)tmp;
+			// get delta time
+			long deltaTime;
+			readVariableLenNumber(deltaTime);
 
-			n <<= 7;
-			n |= (tmp2&0b01111111);
+			totalTime += deltaTime;
 
-			if (!(tmp2 >> 7)) {
-				// ビット7が0なら取得終了
-				break;
-			}
-		}
+			// get status byte
+			read(tmp, 1);
+			unsigned char status = btoi(tmp);
 
-		return n;
+
+			if ((status >> 4) == MidiEvent::NoteOn) {
+
+				NoteEvent evt;
+
+				evt.channel = status & 0x0f;
+
+				// get note number
+				read(tmp, 1);
+				evt.noteNum = btoi(tmp);
+				// get velocity
+				read(tmp, 1);
+				evt.velocity = btoi(tmp);
+
+				evt.totalTime = totalTime;
+				evt.type = MidiEvent::NoteOn;
+
+				noteEvent.push_back(evt);
+
+			} else if ((status >> 4) == MidiEvent::NoteOff) {
+
+				NoteEvent evt;
+
+				evt.channel = status & 0x0f;
+
+				// get note number
+				read(tmp, 1);
+				evt.noteNum = btoi(tmp);
+				// get velocity
+				read(tmp, 1);
+				evt.velocity = btoi(tmp);
+
+				evt.totalTime = totalTime;
+				evt.type = MidiEvent::NoteOff;
+
+				noteEvent.push_back(evt);
+
+			} else if ((status == MidiEvent::MetaEvent)) {
+
+				// get event type
+				read(tmp, 1);
+				unsigned char eventType = btoi(tmp);
+				// get data length
+				long dataLength;
+				readVariableLenNumber(dataLength);
+
+
+				if (eventType == MetaEvent::InstName) {
+
+					std::string instName;
+					read(instName, dataLength);
+
+				} else if (eventType == MetaEvent::TrackEnd) {
+
+					// exit from loop
+					break;
+
+				} else if (eventType == MetaEvent::Tempo) {
+
+					read(tmp, dataLength);
+					float tempo = 60.0f*1e6f/btoi(tmp);
+
+				} else if (eventType == MetaEvent::TimeSignature) {
+
+					read(tmp, 1);
+					int numer = btoi(tmp);
+					read(tmp, 1);
+					int denom = static_cast<int>(pow(2, btoi(tmp)));
+
+					// nothing to do
+					read(tmp, 2);
+
+				} // metaEvent
+
+			} // midiEvent
+
+		} // while (1)
+
+
+		return Status::S_OK;
 	}
 
 
-	
 
 };
 

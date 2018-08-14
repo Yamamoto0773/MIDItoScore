@@ -45,9 +45,11 @@ namespace math {
 	}
 
 	Fraction &Fraction::reduce() {
-		int lcm_frac = gcd(denom, numer);
-		denom /= lcm_frac;
-		numer /= lcm_frac;
+		if (numer != 0) {
+			int lcm_frac = gcd(denom, numer);
+			denom /= lcm_frac;
+			numer /= lcm_frac;
+		}
 
 		return *this;
 	}

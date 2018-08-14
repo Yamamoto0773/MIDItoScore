@@ -77,28 +77,68 @@ namespace midireader {
 			return Status::E_SET_NOFILE;
 
 
+		// load midi file
 		loadHeader();
 
 
-		for (int i = 0; i < header.numofTrack; i++) {
-			loadTrack();
-
+		// ready for std::vector of note event
+		if (noteEvent.size() < (unsigned)header.numofTrack) {
+			noteEvent.resize(header.numofTrack);
 		}
 
 
+		for (int i = 1; i < header.numofTrack + 1; i++) {
+			loadTrack(i);
+		}
 
+
+		// add bar and posInBar
+		for (auto &tracknote : noteEvent) {
+			for (auto &note : tracknote) {
+				auto ret = calcScoreTime(note.time);
+				
+				note.bar = ret.bar;
+				note.posInBar = ret.posInBar;
+			}
+
+		}
+
+		for (auto &e : beatEvent) {
+			auto ret = calcScoreTime(e.time);
+			e.bar = ret.bar;
+		}
+
+		for (auto &e : tempoEvent) {
+			auto ret = calcScoreTime(e.time);
+			e.bar = ret.bar;
+		}
 
 
 		return Status::S_OK;
 	}
 
-	const MIDIHeader & MIDIReader::getHeader() {
+
+	const MIDIHeader & MIDIReader::getHeader() const  {
 		return header;
 	}
 
-	const std::vector<NoteEvent>& MIDIReader::getNoteEvent() {
-		return noteEvent;
+	const std::vector<NoteEvent>& MIDIReader::getNoteEvent(int trackNum) const {
+		return noteEvent.at(trackNum-1);
 	}
+
+	const std::vector<BeatEvent>& MIDIReader::getBeatEvent() const {
+		return beatEvent;
+	}
+
+	const std::vector<TempoEvent>& MIDIReader::getTempoEvent() const {
+		return tempoEvent;
+	}
+
+	const std::vector<Track>& MIDIReader::getTrackList() const {
+		return trackList;		
+	}
+
+
 
 
 	void MIDIReader::close() {
@@ -144,12 +184,111 @@ namespace midireader {
 		return byteCnt;
 	}
 
+	MIDIReader::ScoreTime MIDIReader::calcScoreTime(long midiTime) {
+		MIDIReader::ScoreTime ans(0, math::Fraction(0));
+
+		if (beatEvent.empty())
+			return ans;
+
+
+		// ---------------------------
+		// count the bar
+		ans.bar = 1;
+		auto resolution = static_cast<int>(4 * header.resolutionUnit * getBeat(0));
+		long time = 0;
+
+		while (midiTime - time >= resolution) {
+			time += resolution;
+			ans.bar++;
+
+			// get resolutin unit for next bar
+			resolution = static_cast<int>(4 * header.resolutionUnit * getBeat(time));
+		}
+
+
+		// ---------------------------
+		// calculation position in bar
+		ans.posInBar = { midiTime - time, resolution };
+		ans.posInBar.reduce();
+		if (ans.posInBar == 0) {
+			ans.posInBar.set(0);
+		}
+		
+
+		return ans;
+	}
+
+	const math::Fraction & MIDIReader::getBeat(long miditime) {
+		for (auto rit = beatEvent.crbegin(); rit != beatEvent.crend(); rit++) {
+			if (rit->time <= miditime)
+				return rit->beat;
+		}
+
+		return beatEvent.cbegin()->beat;
+	}
+
+	std::string MIDIReader::toIntervalStr(int noteNum) {
+		std::string intervalStr;
+
+
+		// add alphabet
+		switch (noteNum%12) {
+		case 0: 
+		case 1: 
+			intervalStr.push_back('C');
+			break;
+		case 2:
+		case 3: 
+			intervalStr.push_back('D'); 
+			break;
+		case 4:
+			intervalStr.push_back('E'); 
+			break;
+		case 5:
+		case 6: 
+			intervalStr.push_back('F'); 
+			break;
+		case 7:
+		case 8: 
+			intervalStr.push_back('G'); 
+			break;
+		case 9:
+		case 10: 
+			intervalStr.push_back('A'); 
+			break;
+		case 11:
+			intervalStr.push_back('B'); 
+			break;
+		}
+
+		// add sharp
+		switch (noteNum%12) {
+		case 1:
+		case 3:
+		case 6:
+		case 8:
+		case 10:
+			intervalStr.push_back('#');
+			break;
+		}
+
+		// add number
+		intervalStr += std::to_string(noteNum/12 -1);
+		
+
+		return intervalStr;
+	}
+
 	void MIDIReader::eraseAll(std::string & str) {
 		str.erase(str.cbegin(), str.cend());
 	}
 
 	Status MIDIReader::loadHeader() {
 		std::string tmp;
+
+
+		// move file pointer
+		midi.seekg(0, std::ios_base::beg);
 
 		// get chunk name
 		std::string chunk;
@@ -188,7 +327,7 @@ namespace midireader {
 
 			header.format = format;
 			header.numofTrack = numofTrack;
-			header.resolutionUnit = resolutionUnit >> 1;
+			header.resolutionUnit = resolutionUnit;
 
 
 		} else {
@@ -198,14 +337,42 @@ namespace midireader {
 		return Status::S_OK;
 	}
 
-	Status MIDIReader::loadTrack() {
+	Status MIDIReader::loadTrack(int trackNum) {
+
+		if (trackNum < 1)
+			return Status::E_INVALID_ARG;
+
+		std::string tmp;
+
+
+		// move file pointer
+		midi.seekg(0, std::ios_base::beg);
+
+		for (int i = 0; i < trackNum; i++) {
+			read(tmp, 4); // chunk name
+
+			if ((i == 0 && tmp != "MThd") ||
+				(i > 0  && tmp != "MTrk"))
+				return Status::E_INVALID_FILE;
+
+			eraseAll(tmp);
+			read(tmp, 4); // data length
+			long chunklength = btoi(tmp);
+
+			midi.seekg(chunklength, std::ios_base::cur);
+		}
+
+		
+		auto event_it = noteEvent.begin() + trackNum - 1;
+
+
+
 
 		// get chunk name
 		std::string chunk;
 		read(chunk, 4);
 
 		// get chunk data length
-		std::string tmp;
 		read(tmp, 4);
 		long chunkLength = btoi(tmp);
 
@@ -236,15 +403,15 @@ namespace midireader {
 
 				// get note number
 				read(tmp, 1);
-				evt.noteNum = btoi(tmp);
+				evt.interval = toIntervalStr(btoi(tmp));
 				// get velocity
 				read(tmp, 1);
 				evt.velocity = btoi(tmp);
 
-				evt.totalTime = totalTime;
+				evt.time = totalTime;
 				evt.type = MidiEvent::NoteOn;
 
-				noteEvent.push_back(evt);
+				event_it->push_back(evt);
 
 			} else if ((status >> 4) == MidiEvent::NoteOff) {
 
@@ -254,15 +421,15 @@ namespace midireader {
 
 				// get note number
 				read(tmp, 1);
-				evt.noteNum = btoi(tmp);
+				evt.interval = toIntervalStr(btoi(tmp));
 				// get velocity
 				read(tmp, 1);
 				evt.velocity = btoi(tmp);
 
-				evt.totalTime = totalTime;
+				evt.time = totalTime;
 				evt.type = MidiEvent::NoteOff;
 
-				noteEvent.push_back(evt);
+				event_it->push_back(evt);
 
 			} else if ((status == MidiEvent::MetaEvent)) {
 
@@ -279,6 +446,16 @@ namespace midireader {
 					std::string instName;
 					read(instName, dataLength);
 
+					if (header.format == 0) {
+						musicTitle == instName;
+					}
+					else if (header.format == 1 && trackNum == 1) {
+						musicTitle = instName;						
+					}
+					else {
+						trackList.push_back(Track(trackNum, instName));
+					}
+
 				} else if (eventType == MetaEvent::TrackEnd) {
 
 					// exit from loop
@@ -289,6 +466,10 @@ namespace midireader {
 					read(tmp, dataLength);
 					float tempo = 60.0f*1e6f/btoi(tmp);
 
+					tempoEvent.push_back(
+						TempoEvent(totalTime, 0, tempo)
+					);
+
 				} else if (eventType == MetaEvent::TimeSignature) {
 
 					read(tmp, 1);
@@ -298,6 +479,10 @@ namespace midireader {
 
 					// nothing to do
 					read(tmp, 2);
+
+					beatEvent.push_back(
+						BeatEvent(totalTime, 0, math::Fraction(numer, denom))
+					);
 
 				} // metaEvent
 

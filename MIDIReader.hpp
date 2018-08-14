@@ -15,6 +15,9 @@
 #include <vector>
 #include <fstream>
 
+#include "Fraction.hpp"
+
+
 namespace midireader {
 
 	enum class MidiEvent {
@@ -48,13 +51,53 @@ namespace midireader {
 		int resolutionUnit;
 	};
 
+	struct BeatEvent {
+		BeatEvent(long time, int bar, math::Fraction beat) {
+			this->time = time;
+			this->bar = bar;
+			this->beat = beat;
+		};
+
+		~BeatEvent() {};
+
+		long time;
+		int bar;
+		math::Fraction beat;
+	};
+
+
+	struct TempoEvent {
+		TempoEvent(long time, int bar, float tempo) {
+			this->time = time;
+			this->bar = bar;
+			this->tempo = tempo;
+		}
+
+		long time;
+		int bar;
+		float tempo;
+	};
+
 	struct NoteEvent {
 		MidiEvent type;
 		int channel;
-		long totalTime;
-		int noteNum;
+		long time;
+		int bar;
+		math::Fraction posInBar;
+
+		std::string interval;
 		int velocity;
 	};
+
+	struct Track {
+		Track(int trackNum, std::string name) {
+			this->trackNum = trackNum;
+			this->name = name;
+		}
+		int trackNum;
+		std::string name;
+	};
+
 
 
 	class MIDIReader {
@@ -69,9 +112,13 @@ namespace midireader {
 
 		Status load();
 
-		const MIDIHeader &getHeader();
-		const std::vector<NoteEvent> &getNoteEvent();
-	
+		const MIDIHeader &getHeader() const;
+		const std::vector<NoteEvent> &getNoteEvent(int trackNum) const;
+		const std::vector<BeatEvent> &getBeatEvent() const;
+		const std::vector<TempoEvent> &getTempoEvent() const;
+		// notice: return value is std::vector<Track>
+		const std::vector<Track> &getTrackList() const;
+
 		
 
 		void close();
@@ -81,20 +128,43 @@ namespace midireader {
 
 		std::ifstream midi;
 
-		std::vector<NoteEvent> noteEvent;
 		MIDIHeader header;
-		
+		std::string musicTitle;
+		std::vector<std::vector<NoteEvent>> noteEvent;
+		std::vector<BeatEvent> beatEvent;
+		std::vector<TempoEvent> tempoEvent;
+		std::vector<Track> trackList;
 
 
 		
 		int read(std::string &str, size_t byte);
 		int readVariableLenNumber(long &num);
 
+		struct ScoreTime {
+			ScoreTime(int bar, math::Fraction posInBar) {
+				this->bar = bar;
+				this->posInBar = posInBar;
+			}
+
+			int bar;
+			math::Fraction posInBar;
+		};
+
+		ScoreTime calcScoreTime(long midiTime);
+
+
+		const math::Fraction &getBeat(long miditime);
+
+		std::string toIntervalStr(int noteNum);
+
 		void eraseAll(std::string &str);
 
 		Status loadHeader();
-		Status loadTrack();
-	
+
+		// notice: when load the 1st track, call as "loadTrack(1)"
+		Status loadTrack(int trackNum);
+
+
 	};
 
 }

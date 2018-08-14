@@ -81,6 +81,43 @@ namespace math {
 	}
 
 	template<class T1, class T2>
+	bool operator<(const T1 &L, const T2 &R) {
+		Fraction fracL(L);
+		Fraction fracR(R);
+
+		adjustDenom(fracL, fracR);
+
+		return (fracL.get().n < fracR.get().n);
+	}
+
+
+	template<class T1, class T2>
+	bool operator>(const T1 &L, const T2 &R) {
+		Fraction fracL(L);
+		Fraction fracR(R);
+
+		return fracR < fracL;
+	}
+
+	
+	template<class T1, class T2>
+	bool operator<=(const T1 &L, const T2 &R) {
+		Fraction fracL(L);
+		Fraction fracR(R);
+
+		return !(fracL > fracR);
+	}
+
+	template<class T1, class T2>
+	bool operator>=(const T1 &L, const T2 &R) {
+		Fraction fracL(L);
+		Fraction fracR(R);
+
+		return !(fracL < fracR);
+	}
+
+
+	template<class T1, class T2>
 	Fraction operator+(const T1 &L, const T2 &R) {
 		Fraction fracL(L);
 		Fraction fracR(R);

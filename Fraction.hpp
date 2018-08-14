@@ -27,8 +27,10 @@ namespace math {
 		Fraction &set(int n, int d = 1);
 		frac_t get() const { return { numer, denom }; }
 
-		float to_f() { return static_cast<float>(numer)/denom; }
-		int to_i() { return numer/denom; }
+		float to_f() const { return static_cast<float>(numer)/denom; }
+		int to_i() const { return numer/denom; }
+
+		
 
 		void print();
 
@@ -46,6 +48,8 @@ namespace math {
 		Fraction &operator/=(const Fraction &R);
 		Fraction &operator/=(int R);
 
+		explicit operator int() const noexcept { return to_i();}
+		explicit operator float() const noexcept { return to_f();}
 
 	private:
 		int numer;

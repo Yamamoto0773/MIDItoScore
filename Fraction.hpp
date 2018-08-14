@@ -28,6 +28,7 @@ namespace math {
 		frac_t get() const { return { numer, denom }; }
 
 		float to_f() { return static_cast<float>(numer)/denom; }
+		int to_i() { return numer/denom; }
 
 		void print();
 

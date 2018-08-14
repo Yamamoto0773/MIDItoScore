@@ -9,6 +9,7 @@
 #ifndef _FRACTION_HPP_
 #define _FRACTION_HPP_
 
+#include <string>
 
 namespace math {
 
@@ -29,6 +30,8 @@ namespace math {
 
 		float to_f() const { return static_cast<float>(numer)/denom; }
 		int to_i() const { return numer/denom; }
+
+		std::string get_str() const { return std::to_string(numer) + '/' + std::to_string(denom); }
 
 		
 

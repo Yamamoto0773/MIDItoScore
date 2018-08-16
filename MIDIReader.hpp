@@ -40,8 +40,7 @@ namespace midireader {
 		E_SET_NOFILE = -3,
 		E_UNSUPPORTED_FORMAT = -4,
 		E_INVALID_FILE = -5,
-		S_Keep = 0,
-		S_OK = 1,
+		S_OK = 0,
 	};
 
 
@@ -108,16 +107,16 @@ namespace midireader {
 		~MIDIReader();
 		
 		
-		Status open(const std::string &fileName);
+		Status openAndRead(const std::string &fileName);
 
-		Status load();
-
+		
 		const MIDIHeader &getHeader() const;
 		const std::vector<NoteEvent> &getNoteEvent(int trackNum) const;
 		const std::vector<BeatEvent> &getBeatEvent() const;
 		const std::vector<TempoEvent> &getTempoEvent() const;
 		// notice: return value is std::vector<Track>
 		const std::vector<Track> &getTrackList() const;
+		const std::string &getTitle() const;
 
 		
 
@@ -136,6 +135,7 @@ namespace midireader {
 		std::vector<Track> trackList;
 
 
+		Status readAll();
 		
 		int read(std::string &str, size_t byte);
 		int readVariableLenNumber(long &num);
@@ -159,10 +159,10 @@ namespace midireader {
 
 		void eraseAll(std::string &str);
 
-		Status loadHeader();
+		Status readHeader();
 
-		// notice: when load the 1st track, call as "loadTrack(1)"
-		Status loadTrack(int trackNum);
+		// notice: when read the 1st track, call as "readTrack(1)"
+		Status readTrack(int trackNum);
 
 
 	};

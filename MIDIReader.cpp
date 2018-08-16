@@ -50,45 +50,46 @@ namespace midireader {
 
 	MIDIReader::MIDIReader() {}
 
-	MIDIReader::~MIDIReader() {}
-
-	MIDIReader::MIDIReader(const std::string &fileName) {
-		open(fileName);
+	MIDIReader::~MIDIReader() {
+		close();
 	}
 
-	Status MIDIReader::open(const std::string &fileName) {
+	MIDIReader::MIDIReader(const std::string &fileName) {
+		openAndRead(fileName);
+	}
+
+	Status MIDIReader::openAndRead(const std::string &fileName) {
 		if (fileName.empty())
 			return Status::E_INVALID_ARG;
 
 		if (midi.is_open())
-			midi.close();
+			close();
 
 
 		midi.open(fileName, std::ios_base::binary);
 		if (!midi)
 			return Status::E_CANNOT_OPEN_FILE;
 
-		return Status::S_OK;
+		return readAll();
 	}
 
 
-	Status MIDIReader::load() {
-		if (!midi.is_open())
-			return Status::E_SET_NOFILE;
+	Status MIDIReader::readAll() {
+		Status ret;
 
-
-		// load midi file
-		loadHeader();
+		// read midi file
+		if (Failed(ret = readHeader()))
+			return ret;
 
 
 		// ready for std::vector of note event
-		if (noteEvent.size() < (unsigned)header.numofTrack) {
-			noteEvent.resize(header.numofTrack);
-		}
+		noteEvent.resize(header.numofTrack);
 
 
+		// read tracks
 		for (int i = 1; i < header.numofTrack + 1; i++) {
-			loadTrack(i);
+			if (Failed(ret = readTrack(i)))
+				return ret;
 		}
 
 
@@ -96,7 +97,7 @@ namespace midireader {
 		for (auto &tracknote : noteEvent) {
 			for (auto &note : tracknote) {
 				auto ret = calcScoreTime(note.time);
-				
+
 				note.bar = ret.bar;
 				note.posInBar = ret.posInBar;
 			}
@@ -118,7 +119,7 @@ namespace midireader {
 	}
 
 
-	const MIDIHeader & MIDIReader::getHeader() const  {
+	const MIDIHeader & MIDIReader::getHeader() const {
 		return header;
 	}
 
@@ -135,7 +136,11 @@ namespace midireader {
 	}
 
 	const std::vector<Track>& MIDIReader::getTrackList() const {
-		return trackList;		
+		return trackList;
+	}
+
+	const std::string & MIDIReader::getTitle() const {
+		return musicTitle;
 	}
 
 
@@ -143,8 +148,12 @@ namespace midireader {
 
 	void MIDIReader::close() {
 		midi.close();
+		header = { 0, 0, 0 };
+		musicTitle.clear();
 		noteEvent.clear();
-
+		beatEvent.clear();
+		tempoEvent.clear();
+		trackList.clear();
 	}
 
 	int MIDIReader::read(std::string & str, size_t byte) {
@@ -213,7 +222,7 @@ namespace midireader {
 		if (ans.posInBar == 0) {
 			ans.posInBar.set(0);
 		}
-		
+
 
 		return ans;
 	}
@@ -233,31 +242,31 @@ namespace midireader {
 
 		// add alphabet
 		switch (noteNum%12) {
-		case 0: 
-		case 1: 
+		case 0:
+		case 1:
 			intervalStr.push_back('C');
 			break;
 		case 2:
-		case 3: 
-			intervalStr.push_back('D'); 
+		case 3:
+			intervalStr.push_back('D');
 			break;
 		case 4:
-			intervalStr.push_back('E'); 
+			intervalStr.push_back('E');
 			break;
 		case 5:
-		case 6: 
-			intervalStr.push_back('F'); 
+		case 6:
+			intervalStr.push_back('F');
 			break;
 		case 7:
-		case 8: 
-			intervalStr.push_back('G'); 
+		case 8:
+			intervalStr.push_back('G');
 			break;
 		case 9:
-		case 10: 
-			intervalStr.push_back('A'); 
+		case 10:
+			intervalStr.push_back('A');
 			break;
 		case 11:
-			intervalStr.push_back('B'); 
+			intervalStr.push_back('B');
 			break;
 		}
 
@@ -274,7 +283,7 @@ namespace midireader {
 
 		// add number
 		intervalStr += std::to_string(noteNum/12 -1);
-		
+
 
 		return intervalStr;
 	}
@@ -283,7 +292,7 @@ namespace midireader {
 		str.erase(str.cbegin(), str.cend());
 	}
 
-	Status MIDIReader::loadHeader() {
+	Status MIDIReader::readHeader() {
 		std::string tmp;
 
 
@@ -337,7 +346,7 @@ namespace midireader {
 		return Status::S_OK;
 	}
 
-	Status MIDIReader::loadTrack(int trackNum) {
+	Status MIDIReader::readTrack(int trackNum) {
 
 		if (trackNum < 1)
 			return Status::E_INVALID_ARG;
@@ -362,7 +371,7 @@ namespace midireader {
 			midi.seekg(chunklength, std::ios_base::cur);
 		}
 
-		
+
 		auto event_it = noteEvent.begin() + trackNum - 1;
 
 
@@ -448,11 +457,9 @@ namespace midireader {
 
 					if (header.format == 0) {
 						musicTitle == instName;
-					}
-					else if (header.format == 1 && trackNum == 1) {
-						musicTitle = instName;						
-					}
-					else {
+					} else if (header.format == 1 && trackNum == 1) {
+						musicTitle = instName;
+					} else {
 						trackList.push_back(Track(trackNum, instName));
 					}
 

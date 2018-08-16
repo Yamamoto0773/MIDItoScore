@@ -43,6 +43,9 @@ namespace midireader {
 		S_OK = 0,
 	};
 
+	bool Success(Status s) { return static_cast<int>(s) >= 0; };
+	bool Failed(Status s) { return static_cast<int>(s) < 0; };
+
 
 	struct MIDIHeader {
 		int format;
@@ -96,6 +99,8 @@ namespace midireader {
 		int trackNum;
 		std::string name;
 	};
+
+	
 
 
 

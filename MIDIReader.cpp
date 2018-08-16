@@ -37,12 +37,7 @@ namespace midireader {
 	}
 
 
-	bool Success(Status s) { return static_cast<int>(s) >= 0; };
-	bool Failed(Status s) { return static_cast<int>(s) < 0; };
-
-
-
-
+	
 
 	MIDIReader::MIDIReader() {}
 

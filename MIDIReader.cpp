@@ -36,7 +36,8 @@ namespace midireader {
 		return !(L == R);
 	}
 
-
+	bool Success(Status s) { return static_cast<int>(s) >= 0; };
+	bool Failed(Status s) { return static_cast<int>(s) < 0; };
 	
 
 	MIDIReader::MIDIReader() {}
@@ -73,6 +74,10 @@ namespace midireader {
 			return dummyEvent;
 
 		return noteEvent.at(trackNum-1);
+	}
+
+	const std::vector<std::vector<NoteEvent>>& MIDIReader::getNoteEvent() const {
+		return noteEvent;
 	}
 
 	const std::vector<BeatEvent>& MIDIReader::getBeatEvent() const {

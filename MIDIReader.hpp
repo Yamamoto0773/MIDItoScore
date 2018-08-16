@@ -43,8 +43,8 @@ namespace midireader {
 		S_OK = 0,
 	};
 
-	bool Success(Status s) { return static_cast<int>(s) >= 0; };
-	bool Failed(Status s) { return static_cast<int>(s) < 0; };
+	bool Success(Status s);
+	bool Failed(Status s);
 
 
 	struct MIDIHeader {
@@ -100,7 +100,7 @@ namespace midireader {
 		std::string name;
 	};
 
-	
+
 
 
 
@@ -110,13 +110,14 @@ namespace midireader {
 		MIDIReader(const std::string &fileName);
 
 		~MIDIReader();
-		
+
 
 		Status openAndRead(const std::string &fileName);
 
 		const MIDIHeader &getHeader() const;
 		// notice: When you want to get the note event of 1st track, call as "getNoteEvent(1)"
 		const std::vector<NoteEvent> &getNoteEvent(size_t trackNum) const;
+		const std::vector<std::vector<NoteEvent>> &getNoteEvent() const;
 		const std::vector<BeatEvent> &getBeatEvent() const;
 		const std::vector<TempoEvent> &getTempoEvent() const;
 		// notice: return value is std::vector<Track>
@@ -143,7 +144,7 @@ namespace midireader {
 
 		// read whole midi file
 		Status readAll();
-		
+
 		int read(std::string &str, size_t byte);
 		int readVariableLenNumber(long &num);
 

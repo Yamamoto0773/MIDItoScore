@@ -74,7 +74,7 @@ namespace midireader {
 	}
 
 	const std::vector<NoteEvent>& MIDIReader::getNoteEvent(size_t trackNum) const {
-		if (trackNum >= noteEvent.size())
+		if (trackNum-1 >= noteEvent.size())
 			return dummyEvent;
 
 		return noteEvent.at(trackNum-1);

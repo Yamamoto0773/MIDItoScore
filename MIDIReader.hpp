@@ -106,22 +106,19 @@ namespace midireader {
 
 		~MIDIReader();
 		
-		
+
 		Status openAndRead(const std::string &fileName);
 
-		
 		const MIDIHeader &getHeader() const;
-		const std::vector<NoteEvent> &getNoteEvent(int trackNum) const;
+		// notice: When you want to get the note event of 1st track, call as "getNoteEvent(1)"
+		const std::vector<NoteEvent> &getNoteEvent(size_t trackNum) const;
 		const std::vector<BeatEvent> &getBeatEvent() const;
 		const std::vector<TempoEvent> &getTempoEvent() const;
 		// notice: return value is std::vector<Track>
 		const std::vector<Track> &getTrackList() const;
 		const std::string &getTitle() const;
 
-		
-
 		void close();
-
 
 	private:
 
@@ -135,6 +132,11 @@ namespace midireader {
 		std::vector<Track> trackList;
 
 
+		// for out of range access
+		const std::vector<NoteEvent> dummyEvent;
+
+
+		// read whole midi file
 		Status readAll();
 		
 		int read(std::string &str, size_t byte);
@@ -170,12 +172,5 @@ namespace midireader {
 }
 
 
-
-
-
-
-
 #else
 #endif
-
-

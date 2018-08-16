@@ -5,8 +5,6 @@
 namespace midireader {
 
 
-
-
 	// convert byte (stored in std::string) to int
 	int btoi(const std::string &str) {
 		int ans = 0;
@@ -21,8 +19,6 @@ namespace midireader {
 
 		return ans;
 	}
-
-
 
 	bool operator==(unsigned char L, MetaEvent R) {
 		return (L == static_cast<unsigned char>(R));
@@ -73,6 +69,46 @@ namespace midireader {
 		return readAll();
 	}
 
+	const MIDIHeader & MIDIReader::getHeader() const {
+		return header;
+	}
+
+	const std::vector<NoteEvent>& MIDIReader::getNoteEvent(size_t trackNum) const {
+		if (trackNum >= noteEvent.size())
+			return dummyEvent;
+
+		return noteEvent.at(trackNum-1);
+	}
+
+	const std::vector<BeatEvent>& MIDIReader::getBeatEvent() const {
+		return beatEvent;
+	}
+
+	const std::vector<TempoEvent>& MIDIReader::getTempoEvent() const {
+		return tempoEvent;
+	}
+
+	const std::vector<Track>& MIDIReader::getTrackList() const {
+		return trackList;
+	}
+
+	const std::string & MIDIReader::getTitle() const {
+		return musicTitle;
+	}
+
+	void MIDIReader::close() {
+		midi.close();
+		header = { 0, 0, 0 };
+		musicTitle.clear();
+		noteEvent.clear();
+		beatEvent.clear();
+		tempoEvent.clear();
+		trackList.clear();
+	}
+
+
+
+
 
 	Status MIDIReader::readAll() {
 		Status ret;
@@ -116,44 +152,6 @@ namespace midireader {
 
 
 		return Status::S_OK;
-	}
-
-
-	const MIDIHeader & MIDIReader::getHeader() const {
-		return header;
-	}
-
-	const std::vector<NoteEvent>& MIDIReader::getNoteEvent(int trackNum) const {
-		return noteEvent.at(trackNum-1);
-	}
-
-	const std::vector<BeatEvent>& MIDIReader::getBeatEvent() const {
-		return beatEvent;
-	}
-
-	const std::vector<TempoEvent>& MIDIReader::getTempoEvent() const {
-		return tempoEvent;
-	}
-
-	const std::vector<Track>& MIDIReader::getTrackList() const {
-		return trackList;
-	}
-
-	const std::string & MIDIReader::getTitle() const {
-		return musicTitle;
-	}
-
-
-
-
-	void MIDIReader::close() {
-		midi.close();
-		header = { 0, 0, 0 };
-		musicTitle.clear();
-		noteEvent.clear();
-		beatEvent.clear();
-		tempoEvent.clear();
-		trackList.clear();
 	}
 
 	int MIDIReader::read(std::string & str, size_t byte) {

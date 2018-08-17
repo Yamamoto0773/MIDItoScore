@@ -267,3 +267,4 @@ main.cpp
 *.mid
 *.vcxproj
 *.vcxproj.filters
+*.txt

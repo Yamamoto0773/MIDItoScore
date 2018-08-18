@@ -31,7 +31,7 @@ int main() {
 	format.laneAllocation.resize(4);
 	format.laneAllocation = {"C5", "D5", "E5", "F5"};
 
-	midiToScore.createScore("score.txt", format);
+	midiToScore.writeScore("score.txt", format);
 	
 	return 0;
 }

@@ -34,8 +34,6 @@
 
 #include "MIDIReader.hpp"
 
-#include <array>
-
 namespace miditoscore {
 
 

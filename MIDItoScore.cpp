@@ -82,11 +82,11 @@ namespace miditoscore {
 	}
 
 	int MIDItoScore::selectNoteLane(const NoteFormat &format, const noteevent_const_itr_t &note) {
-		auto lane_it = std::find(format.laneAllocation.cbegin(), format.laneAllocation.cend(), note->interval);
+		auto lane_it = std::find(format.laneAllocation.begin(), format.laneAllocation.end(), note->interval);
 		if (lane_it == format.laneAllocation.cend())
 			return -1;
 
-		return lane_it - format.laneAllocation.cbegin();
+		return static_cast<int>(lane_it - format.laneAllocation.cbegin());
 	}
 
 	void MIDItoScore::createDataLengthList(std::vector<size_t>& dataLength, const NoteFormat & format, std::vector<bool> &isHoldStarted, const noteevent_const_itr_t &begin, const noteevent_const_itr_t &end) {
@@ -159,7 +159,7 @@ namespace miditoscore {
 
 			// calculate note offset
 			math::Fraction pos(it->posInBar);
-			math::Fraction unit(1, dataLengthList.at(laneNum));
+			math::Fraction unit(1, static_cast<int>(dataLengthList.at(laneNum)));
 			math::adjustDenom(pos, unit);
 			int offset = pos.get().n;
 

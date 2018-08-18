@@ -154,7 +154,7 @@ namespace midireader {
 		return Status::S_OK;
 	}
 
-	int MIDIReader::read(std::string & str, size_t byte) {
+	size_t MIDIReader::read(std::string & str, size_t byte) {
 		char ch;
 
 		eraseAll(str);
@@ -169,9 +169,9 @@ namespace midireader {
 		return i;
 	}
 
-	int MIDIReader::readVariableLenNumber(long & num) {
+	size_t MIDIReader::readVariableLenNumber(long & num) {
 		num = 0;
-		int byteCnt = 0;
+		size_t byteCnt = 0;
 
 		while (true) {
 			char ch;

@@ -145,8 +145,8 @@ namespace midireader {
 		// read whole midi file
 		Status readAll();
 
-		int read(std::string &str, size_t byte);
-		int readVariableLenNumber(long &num);
+		size_t read(std::string &str, size_t byte);
+		size_t readVariableLenNumber(long &num);
 
 		struct ScoreTime {
 			ScoreTime(int bar, math::Fraction posInBar) {

@@ -59,8 +59,8 @@ namespace miditoscore {
 
 		midireader::Status readMidi(const std::string &fileName);
 
-		midireader::Status createScore(const std::string &fileName, const NoteFormat &format);
-		midireader::Status createScore(std::ostream &stream, const NoteFormat &format);
+		midireader::Status writeScore(const std::string &fileName, const NoteFormat &format);
+		midireader::Status writeScore(std::ostream &stream, const NoteFormat &format);
 
 
 

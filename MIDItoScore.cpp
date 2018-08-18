@@ -16,15 +16,15 @@ namespace miditoscore {
 		return prevStatus;
 	}
 
-	midireader::Status MIDItoScore::createScore(const std::string & fileName, const NoteFormat & format) {
+	midireader::Status MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format) {
 		std::ofstream scoreFile(fileName.c_str());
 		if (!scoreFile.is_open())
 			return midireader::Status::E_CANNOT_OPEN_FILE;
 
-		return createScore(scoreFile, format);
+		return writeScore(scoreFile, format);
 	}
 
-	midireader::Status MIDItoScore::createScore(std::ostream & stream, const NoteFormat & format) {
+	midireader::Status MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format) {
 		using namespace midireader;
 
 		if (Failed(prevStatus))

@@ -1,6 +1,7 @@
 #include "MIDIReader.hpp"
 
-#include <array>
+#include <cmath>
+
 
 namespace midireader {
 
@@ -480,7 +481,7 @@ namespace midireader {
 					read(tmp, 1);
 					int numer = btoi(tmp);
 					read(tmp, 1);
-					int denom = static_cast<int>(pow(2, btoi(tmp)));
+					int denom = static_cast<int>(std::pow(2, btoi(tmp)));
 
 					// nothing to do
 					read(tmp, 2);

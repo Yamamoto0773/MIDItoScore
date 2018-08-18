@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <iomanip>
-
+#include <algorithm>
 
 namespace miditoscore {
 

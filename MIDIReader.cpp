@@ -216,7 +216,7 @@ namespace midireader {
 
 		// ---------------------------
 		// calculation position in bar
-		ans.posInBar = { midiTime - time, resolution };
+		ans.posInBar = { static_cast<int>(midiTime - time), resolution };
 		ans.posInBar.reduce();
 		if (ans.posInBar == 0) {
 			ans.posInBar.set(0);
@@ -455,7 +455,7 @@ namespace midireader {
 					read(instName, dataLength);
 
 					if (header.format == 0) {
-						musicTitle == instName;
+						musicTitle = instName;
 					} else if (header.format == 1 && trackNum == 1) {
 						musicTitle = instName;
 					} else {

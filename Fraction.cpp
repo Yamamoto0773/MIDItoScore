@@ -1,7 +1,5 @@
 #include "Fraction.hpp"
 
-#include <exception>
-#include <iostream>
 
 namespace math {
 

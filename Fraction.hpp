@@ -10,6 +10,8 @@
 #define _FRACTION_HPP_
 
 #include <string>
+#include <exception>
+#include <iostream>
 
 namespace math {
 

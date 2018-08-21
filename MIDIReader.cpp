@@ -39,7 +39,7 @@ namespace midireader {
 
 	bool Success(Status s) { return static_cast<int>(s) >= 0; };
 	bool Failed(Status s) { return static_cast<int>(s) < 0; };
-	
+
 
 	MIDIReader::MIDIReader() {}
 
@@ -150,6 +150,11 @@ namespace midireader {
 			auto ret = calcScoreTime(e.time);
 			e.bar = ret.bar;
 		}
+
+
+
+		if (beatEvent.empty())
+			return Status::S_NO_EMBED_TIMESIGNATURE;
 
 
 		return Status::S_OK;
@@ -307,40 +312,39 @@ namespace midireader {
 		int chunkLength = btoi(tmp);
 
 
-		if (chunk == "MThd") {
-
-			// check midi format
-			read(tmp, 2);
-			int format = btoi(tmp);
-			if (format == 2) {
-				// [SMF error] SMF FORMAT 2 is unsupported.
-				return Status::E_UNSUPPORTED_FORMAT;
-			}
-
-
-			// get the number of tracks
-			read(tmp, 2);
-			int numofTrack = btoi(tmp);
-
-
-			// check the resolution unit
-			read(tmp, 2);
-			int resolutionUnit = btoi(tmp);
-			if (resolutionUnit >> 15) {
-				// [SMF error] this TIME UNIT FORMAT is unsupported.
-				return Status::E_UNSUPPORTED_FORMAT;
-			}
-
-
-
-			header.format = format;
-			header.numofTrack = numofTrack;
-			header.resolutionUnit = resolutionUnit;
-
-
-		} else {
+		if (chunk != "MThd")
 			return Status::E_INVALID_FILE;
+
+
+		// check midi format
+		read(tmp, 2);
+		int format = btoi(tmp);
+		if (format == 2) {
+			// [SMF error] SMF FORMAT 2 is unsupported.
+			return Status::E_UNSUPPORTED_FORMAT;
 		}
+
+
+		// get the number of tracks
+		read(tmp, 2);
+		int numofTrack = btoi(tmp);
+
+
+		// check the resolution unit
+		read(tmp, 2);
+		int resolutionUnit = btoi(tmp);
+		if (resolutionUnit >> 15) {
+			// [SMF error] this TIME UNIT FORMAT is unsupported.
+			return Status::E_UNSUPPORTED_FORMAT;
+		}
+
+
+
+		header.format = format;
+		header.numofTrack = numofTrack;
+		header.resolutionUnit = resolutionUnit;
+
+
 
 		return Status::S_OK;
 	}
@@ -375,7 +379,6 @@ namespace midireader {
 
 
 
-
 		// get chunk name
 		std::string chunk;
 		read(chunk, 4);
@@ -389,6 +392,12 @@ namespace midireader {
 			return Status::E_INVALID_FILE;
 
 
+
+		// add track
+		trackList.push_back(Track(trackNum, ""));
+
+
+			
 		long totalTime = 0;
 		while (1) {
 
@@ -454,12 +463,17 @@ namespace midireader {
 					std::string instName;
 					read(instName, dataLength);
 
+					// search a element which has same track number 
+					size_t subscript = findTrack(trackNum) - trackList.cbegin();
+
 					if (header.format == 0) {
 						musicTitle = instName;
-					} else if (header.format == 1 && trackNum == 1) {
-						musicTitle = instName;
+						trackList.at(subscript).name = instName;
 					} else {
-						trackList.push_back(Track(trackNum, instName));
+						if (trackNum == 1)
+							musicTitle = instName;
+						else
+							trackList.at(subscript).name = instName;
 					}
 
 				} else if (eventType == MetaEvent::TrackEnd) {
@@ -498,6 +512,17 @@ namespace midireader {
 
 
 		return Status::S_OK;
+	}
+
+	std::vector<Track>::const_iterator MIDIReader::findTrack(size_t trackNum) {
+	
+		for (auto it = trackList.cbegin(); it != trackList.cend(); it++) {
+			if (it->trackNum == trackNum) {
+				return it;
+			}
+		}
+
+		return trackList.cend();
 	}
 
 

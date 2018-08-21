@@ -41,6 +41,7 @@ namespace midireader {
 		E_UNSUPPORTED_FORMAT = -4,
 		E_INVALID_FILE = -5,
 		S_OK = 0,
+		S_NO_EMBED_TIMESIGNATURE = 1,
 	};
 
 	bool Success(Status s);
@@ -171,6 +172,8 @@ namespace midireader {
 
 		// notice: when read the 1st track, call as "readTrack(1)"
 		Status readTrack(int trackNum);
+
+		std::vector<Track>::const_iterator findTrack(size_t trackNum);
 
 
 	};

@@ -27,7 +27,7 @@ namespace miditoscore {
 	midireader::Status MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format) {
 		using namespace midireader;
 
-		if (Failed(prevStatus))
+		if (prevStatus != Status::S_OK)
 			return prevStatus;
 
 		

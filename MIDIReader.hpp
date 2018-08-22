@@ -125,6 +125,10 @@ namespace midireader {
 		const std::vector<Track> &getTrackList() const;
 		const std::string &getTitle() const;
 
+		// set amplitude in adjusting timing of the note event
+		// notice : When you call this function, please call it before openAndRead()
+		void setAdjustmentAmplitude(size_t midiTime = 0);
+
 		void close();
 
 	private:
@@ -137,6 +141,11 @@ namespace midireader {
 		std::vector<BeatEvent> beatEvent;
 		std::vector<TempoEvent> tempoEvent;
 		std::vector<Track> trackList;
+
+
+		// for amplitude in adjusting timing of the note event.
+		// default value : 0
+		size_t adjustAmplitude;
 
 
 		// for out of range access
@@ -160,6 +169,7 @@ namespace midireader {
 		};
 
 		ScoreTime calcScoreTime(long midiTime);
+		ScoreTime calcOptimumScoreTime(long &midiTime, size_t amplitude);
 
 
 		const math::Fraction &getBeat(long miditime);

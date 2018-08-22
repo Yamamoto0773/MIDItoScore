@@ -62,6 +62,9 @@ namespace miditoscore {
 		midireader::Status writeScore(const std::string &fileName, const NoteFormat &format);
 		midireader::Status writeScore(std::ostream &stream, const NoteFormat &format);
 
+		// set amplitude in adjusting timing of the note event
+		// notice : When you call this function, please call it before openAndRead()
+		void setAdjustmentAmplitude(size_t midiTime);
 
 
 	private:

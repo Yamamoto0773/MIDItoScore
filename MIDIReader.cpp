@@ -97,6 +97,10 @@ namespace midireader {
 		return musicTitle;
 	}
 
+	void MIDIReader::setAdjustmentAmplitude(size_t midiTime) {
+		adjustAmplitude = midiTime;
+	}
+
 	void MIDIReader::close() {
 		midi.close();
 		header = { 0, 0, 0 };
@@ -130,15 +134,22 @@ namespace midireader {
 		}
 
 
-		// add bar and posInBar
+
+		// calculate bar and posInBar, and add them to event.
 		for (auto &tracknote : noteEvent) {
 			for (auto &note : tracknote) {
-				auto ret = calcScoreTime(note.time);
 
-				note.bar = ret.bar;
-				note.posInBar = ret.posInBar;
+				ScoreTime scoreTime = calcScoreTime(note.time);
+
+				if (scoreTime.posInBar.get().d > 256) {
+					// find the most suitable fraction which express position of the note.
+					scoreTime = calcOptimumScoreTime(note.time, adjustAmplitude);
+				}
+
+				note.bar = scoreTime.bar;
+				note.posInBar = scoreTime.posInBar;
+
 			}
-
 		}
 
 		for (auto &e : beatEvent) {
@@ -229,6 +240,28 @@ namespace midireader {
 
 
 		return ans;
+	}
+
+	MIDIReader::ScoreTime MIDIReader::calcOptimumScoreTime(long &midiTime, size_t amplitude) {
+		int amplitude_i = static_cast<int>(amplitude);
+		long origin = midiTime;
+
+		ScoreTime bestAns = calcScoreTime(origin);
+
+		for (int offset = -amplitude_i; offset <= +amplitude_i; offset++) {
+			// skip if midiTime + offset = <underflow>
+			if (offset < 0 && origin < std::abs(offset)) continue;
+			if (offset == 0) continue;
+
+			auto scoreTime = calcScoreTime(origin + offset);
+			if (scoreTime.posInBar.get().d < bestAns.posInBar.get().d) {
+				bestAns = scoreTime;
+				midiTime = origin + offset;
+			}
+		}
+
+
+		return bestAns;
 	}
 
 	const math::Fraction & MIDIReader::getBeat(long miditime) {
@@ -397,7 +430,7 @@ namespace midireader {
 		trackList.push_back(Track(trackNum, ""));
 
 
-			
+
 		long totalTime = 0;
 		while (1) {
 
@@ -515,7 +548,7 @@ namespace midireader {
 	}
 
 	std::vector<Track>::const_iterator MIDIReader::findTrack(size_t trackNum) {
-	
+
 		for (auto it = trackList.cbegin(); it != trackList.cend(); it++) {
 			if (it->trackNum == trackNum) {
 				return it;

@@ -13,10 +13,6 @@ namespace miditoscore {
 
 	midireader::Status MIDItoScore::readMidi(const std::string & fileName) {
 		prevStatus = midi.openAndRead(fileName);
-
-		if (midi.getHeader().format != 1)
-			prevStatus = midireader::Status::E_UNSUPPORTED_FORMAT;
-
 		return prevStatus;
 	}
 
@@ -34,7 +30,7 @@ namespace miditoscore {
 		if (prevStatus != Status::S_OK)
 			return prevStatus;
 
-		
+
 		// check the track number where exist any note events
 		size_t trackNum = 0;
 		for (auto t = midi.getTrackList().cbegin(); t != midi.getTrackList().cend(); t++) {
@@ -85,6 +81,10 @@ namespace miditoscore {
 		return Status::S_OK;
 	}
 
+	void MIDItoScore::setAdjustmentAmplitude(size_t midiTime) {
+		midi.setAdjustmentAmplitude(midiTime);
+	}
+
 	int MIDItoScore::selectNoteLane(const NoteFormat &format, const noteevent_const_itr_t &note) {
 		auto lane_it = std::find(format.laneAllocation.begin(), format.laneAllocation.end(), note->interval);
 		if (lane_it == format.laneAllocation.cend())
@@ -111,7 +111,7 @@ namespace miditoscore {
 			math::Fraction pos(it->posInBar);
 
 			int laneNumber = selectNoteLane(format, it);
-			if (laneNumber >= 0 && 
+			if (laneNumber >= 0 &&
 				NoteType::NONE != selectNoteType(it, format, isHoldStarted.begin() + laneNumber)) {
 				exist.at(laneNumber) = true;
 				math::adjustDenom(barUnit.at(laneNumber), pos);
@@ -128,7 +128,7 @@ namespace miditoscore {
 
 
 	void MIDItoScore::createScoreInBuffer(std::vector<std::string>& scoreData, std::vector<bool> &isHoldStarted, const NoteFormat & format, const noteevent_const_itr_t &begin_it, const noteevent_const_itr_t &end_it) {
-		
+
 		for (auto &sd : scoreData) sd.clear();
 
 		// calculate minimum unit which can express position of the note in a bar

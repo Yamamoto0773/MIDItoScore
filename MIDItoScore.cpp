@@ -13,6 +13,10 @@ namespace miditoscore {
 
 	midireader::Status MIDItoScore::readMidi(const std::string & fileName) {
 		prevStatus = midi.openAndRead(fileName);
+
+		if (midi.getHeader().format != 1)
+			prevStatus = midireader::Status::E_UNSUPPORTED_FORMAT;
+
 		return prevStatus;
 	}
 

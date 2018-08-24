@@ -68,6 +68,24 @@ kk... ノーツの位置とノーツの種類 (ノーツの位置に合わせて
 0番のレーンに，20小節と16分音符x5つ分ずれた位置に単押しのノーツが存在することを表します．
 ノーツの位置が4分音符で表せる場合には，kk..の部分は4文字になります．
 
+
+### 備考
+三連符配置のあるMIDIファイルを譜面データに書き出すと，1行のデータがとても長くなる場合があります．
+そのような場合には，以下のような処理を追加して下さい．
+```
+miditoscore::MIDItoScore midiToScore;
+
+// Setting of Timing Adjustment
+midiToScore.setAdjustmentAmplitude(1);
+
+midiToScore.readMidi(fileName);
+```
+`MIDItoScore::setAdjustmentAmplitude()`は，指定範囲内でノーツのタイミング調整を行う関数です．
+`MIDItoScore::readMidi()`を実行する前に呼び出して下さい．
+引数で調整範囲を指定できますが，通常は1で大丈夫です．
+
+
+
 ### ライセンス (about License)
 (This software is released under the MIT License, see LICENSE)
 

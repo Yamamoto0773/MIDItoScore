@@ -169,7 +169,7 @@ namespace midireader {
 		};
 
 		ScoreTime calcScoreTime(long midiTime);
-		ScoreTime calcOptimumScoreTime(long &midiTime, size_t amplitude);
+		ScoreTime calcBestScoreTime(long &midiTime, size_t threshold);
 
 
 		const math::Fraction &getBeat(long miditime);

@@ -139,12 +139,8 @@ namespace midireader {
 		for (auto &tracknote : noteEvent) {
 			for (auto &note : tracknote) {
 
-				ScoreTime scoreTime = calcScoreTime(note.time);
-
-				if (scoreTime.posInBar.get().d > 256) {
-					// find the most suitable fraction which express position of the note.
-					scoreTime = calcOptimumScoreTime(note.time, adjustAmplitude);
-				}
+				// find the most suitable fraction which express position of the note.
+				ScoreTime scoreTime = calcBestScoreTime(note.time, 256);
 
 				note.bar = scoreTime.bar;
 				note.posInBar = scoreTime.posInBar;
@@ -242,22 +238,26 @@ namespace midireader {
 		return ans;
 	}
 
-	MIDIReader::ScoreTime MIDIReader::calcOptimumScoreTime(long &midiTime, size_t amplitude) {
-		int amplitude_i = static_cast<int>(amplitude);
+	MIDIReader::ScoreTime MIDIReader::calcBestScoreTime(long &midiTime, size_t threshold) {
+		int amplitude_i = static_cast<int>(adjustAmplitude);
 		long origin = midiTime;
 
 		ScoreTime bestAns = calcScoreTime(origin);
 
-		for (int offset = -amplitude_i; offset <= +amplitude_i; offset++) {
-			// skip if midiTime + offset = <underflow>
-			if (offset < 0 && origin < std::abs(offset)) continue;
-			if (offset == 0) continue;
+		if (bestAns.posInBar.get().d > threshold) {
 
-			auto scoreTime = calcScoreTime(origin + offset);
-			if (scoreTime.posInBar.get().d < bestAns.posInBar.get().d) {
-				bestAns = scoreTime;
-				midiTime = origin + offset;
+			for (int offset = -amplitude_i; offset <= +amplitude_i; offset++) {
+				// skip if midiTime + offset => <underflow>
+				if (offset < 0 && origin < std::abs(offset)) continue;
+				if (offset == 0) continue;
+
+				auto scoreTime = calcScoreTime(origin + offset);
+				if (scoreTime.posInBar.get().d < bestAns.posInBar.get().d) {
+					bestAns = scoreTime;
+					midiTime = origin + offset;
+				}
 			}
+
 		}
 
 

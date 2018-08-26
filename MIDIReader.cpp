@@ -537,6 +537,11 @@ namespace midireader {
 						BeatEvent(totalTime, 0, math::Fraction(numer, denom))
 					);
 
+				} else {
+
+					// nothing to do
+					read(tmp, dataLength);
+
 				} // metaEvent
 
 			} // midiEvent

@@ -443,14 +443,15 @@ namespace midireader {
 			// get status byte
 			read(tmp, 1);
 			unsigned char status = btoi(tmp);
+			unsigned char status_upper = status >> 4;
 
-
-			if ((status >> 4) == MidiEvent::NoteOn) {
+			
+			// Note On/Off
+			if (status_upper == 0x9 || status_upper == 0x8) {
 
 				NoteEvent evt;
 
 				evt.channel = status & 0x0f;
-
 				// get note number
 				read(tmp, 1);
 				evt.interval = toIntervalStr(btoi(tmp));
@@ -459,29 +460,16 @@ namespace midireader {
 				evt.velocity = btoi(tmp);
 
 				evt.time = totalTime;
-				evt.type = MidiEvent::NoteOn;
+
+				if (status_upper == 0x9)
+					evt.type = MidiEvent::NoteOn;
+				else
+					evt.type = MidiEvent::NoteOff;
 
 				event_it->push_back(evt);
-
-			} else if ((status >> 4) == MidiEvent::NoteOff) {
-
-				NoteEvent evt;
-
-				evt.channel = status & 0x0f;
-
-				// get note number
-				read(tmp, 1);
-				evt.interval = toIntervalStr(btoi(tmp));
-				// get velocity
-				read(tmp, 1);
-				evt.velocity = btoi(tmp);
-
-				evt.time = totalTime;
-				evt.type = MidiEvent::NoteOff;
-
-				event_it->push_back(evt);
-
-			} else if ((status == MidiEvent::MetaEvent)) {
+			
+			// Meta Event
+			} else if ((status == 0xff)) {
 
 				// get event type
 				read(tmp, 1);
@@ -543,6 +531,32 @@ namespace midireader {
 					read(tmp, dataLength);
 
 				} // metaEvent
+
+
+
+			// nothing to do in following events
+			} else if (status_upper == 0xa) {
+				// polyphonic key pressure
+				read(tmp, 2);
+			} else if (status_upper == 0xb) {
+				// controll change
+				read(tmp, 2);
+				read(tmp, 1);
+				if (btoi(tmp) > 0x7f)
+					midi.seekg(-1, std::ios::cur);
+			} else if (status_upper == 0xc) {
+				// program change
+				read(tmp, 1);
+			} else if (status_upper == 0xd) {
+				// channel pressure
+				read(tmp, 1);
+			} else if (status_upper == 0xe) {
+				// pitch bend
+				read(tmp, 2);
+			} else if (status == 0xf0 || status == 0xf7) {
+				// SysEx event
+				long dataLength;
+				readVariableLenNumber(dataLength);
 
 			} // midiEvent
 

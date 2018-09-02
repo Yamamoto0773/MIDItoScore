@@ -469,7 +469,7 @@ namespace midireader {
 				event_it->push_back(evt);
 			
 			// Meta Event
-			} else if ((status == 0xff)) {
+			} else if (status == 0xff) {
 
 				// get event type
 				read(tmp, 1);

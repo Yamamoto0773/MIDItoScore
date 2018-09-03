@@ -11,32 +11,16 @@ namespace miditoscore {
 
 	MIDItoScore::~MIDItoScore() {}
 
-	midireader::Status MIDItoScore::readMidi(const std::string & fileName) {
-		prevStatus = midi.openAndRead(fileName);
-		return prevStatus;
-	}
-
-	midireader::Status MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format) {
+	midireader::Status MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format, const midireader::MIDIReader &midi, size_t trackNum) {
 		std::ofstream scoreFile(fileName.c_str());
 		if (!scoreFile.is_open())
 			return midireader::Status::E_CANNOT_OPEN_FILE;
 
-		return writeScore(scoreFile, format);
+		return writeScore(scoreFile, format, midi, trackNum);
 	}
 
-	midireader::Status MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format) {
+	midireader::Status MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format, const midireader::MIDIReader &midi, size_t trackNum) {
 		using namespace midireader;
-
-		if (prevStatus != Status::S_OK)
-			return prevStatus;
-
-
-		// check the track number where exist any note events
-		size_t trackNum = 0;
-		for (auto t = midi.getTrackList().cbegin(); t != midi.getTrackList().cend(); t++) {
-			if (midi.getNoteEvent(t->trackNum).size() > 0)
-				trackNum = t->trackNum;
-		}
 
 		const auto &noteEvent = midi.getNoteEvent(trackNum);
 
@@ -79,10 +63,6 @@ namespace miditoscore {
 
 
 		return Status::S_OK;
-	}
-
-	void MIDItoScore::setAdjustmentAmplitude(size_t midiTime) {
-		midi.setAdjustmentAmplitude(midiTime);
 	}
 
 	int MIDItoScore::selectNoteLane(const NoteFormat &format, const noteevent_const_itr_t &note) {

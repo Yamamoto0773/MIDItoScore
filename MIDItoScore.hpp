@@ -56,22 +56,10 @@ namespace miditoscore {
 		MIDItoScore();
 		~MIDItoScore();
 
-
-		midireader::Status readMidi(const std::string &fileName);
-
-		midireader::Status writeScore(const std::string &fileName, const NoteFormat &format);
-		midireader::Status writeScore(std::ostream &stream, const NoteFormat &format);
-
-		// set amplitude in adjusting timing of the note event
-		// notice : When you call this function, please call it before openAndRead()
-		void setAdjustmentAmplitude(size_t midiTime);
-
+		midireader::Status writeScore(const std::string &fileName, const NoteFormat &format, const midireader::MIDIReader &idi, size_t trackNum);
+		midireader::Status writeScore(std::ostream &stream, const NoteFormat &format, const midireader::MIDIReader &midi, size_t trackNum);
 
 	private:
-		midireader::MIDIReader midi;
-
-		midireader::Status prevStatus;
-
 
 		using noteevent_const_itr_t = std::vector<midireader::NoteEvent>::const_iterator;
 
@@ -95,7 +83,8 @@ namespace miditoscore {
 			);
 
 		
-			
+		
+
 		
 
 	};

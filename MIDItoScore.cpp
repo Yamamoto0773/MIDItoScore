@@ -11,19 +11,28 @@ namespace miditoscore {
 
 	MIDItoScore::~MIDItoScore() {}
 
-	midireader::Status MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format, const midireader::MIDIReader &midi, size_t trackNum) {
-		std::ofstream scoreFile(fileName.c_str());
+
+	int MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format, const midireader::MIDIReader &midi, size_t trackNum) {
+		std::ofstream scoreFile(fileName.c_str(), std::ios::app);
 		if (!scoreFile.is_open())
-			return midireader::Status::E_CANNOT_OPEN_FILE;
+			return Status::E_CANNOT_OPEN_FILE;
 
 		return writeScore(scoreFile, format, midi, trackNum);
 	}
 
-	midireader::Status MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format, const midireader::MIDIReader &midi, size_t trackNum) {
+	int MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format, const midireader::MIDIReader &midi, size_t trackNum) {
 		using namespace midireader;
 
-		const auto &noteEvent = midi.getNoteEvent(trackNum);
+		int ret = Status::S_OK;
 
+		clear();
+		noteFormat = format;
+
+		noteAggregate.resize(format.laneAllocation.size());
+
+
+
+		const auto &noteEvent = midi.getNoteEvent(trackNum);
 
 		size_t currentBar = 1;
 		noteevent_const_itr_t begin_it = noteEvent.cbegin();
@@ -34,6 +43,7 @@ namespace miditoscore {
 		std::vector<bool> isHoldStarted;
 		isHoldStarted.resize(format.laneAllocation.size());
 
+
 		while (end_it != noteEvent.cend()) {
 
 			// calculate range of the note event in current bar
@@ -41,7 +51,10 @@ namespace miditoscore {
 				if (end_it->bar != currentBar) break;
 			};
 
-			createScoreInBuffer(scoreData, isHoldStarted, format, begin_it, end_it);
+
+			// create the score data in buffer
+			ret |= createScoreInBuffer(scoreData, isHoldStarted, format, begin_it, end_it);
+	
 
 			// write the score data to file.
 			for (auto sd = scoreData.cbegin(); sd != scoreData.cend(); sd++) {
@@ -51,7 +64,7 @@ namespace miditoscore {
 					using namespace std;
 					stream << sd - scoreData.cbegin() << ':'
 						<< setfill('0') << setw(3) << currentBar << ':'
-						<< sd->c_str() << '\n';
+						<< sd->c_str() << endl;
 				}
 			}
 
@@ -62,7 +75,37 @@ namespace miditoscore {
 		}
 
 
-		return Status::S_OK;
+		return ret;
+	}
+
+	size_t MIDItoScore::numofHoldNotes(const std::string & interval) const {
+		int pos = -1;
+
+		for (int i = 0; i < noteFormat.laneAllocation.size(); i++) {
+			if (noteFormat.laneAllocation.at(i) == interval) {
+				pos = i;
+			}
+		}
+
+		if (pos < 0)
+			return 0;
+
+		return noteAggregate.at(pos).hold;
+	}
+
+	size_t MIDItoScore::numofHitNotes(const std::string & interval) const {
+		int pos = -1;
+
+		for (int i = 0; i < noteFormat.laneAllocation.size(); i++) {
+			if (noteFormat.laneAllocation.at(i) == interval) {
+				pos = i;
+			}
+		}
+
+		if (pos < 0)
+			return 0;
+
+		return noteAggregate.at(pos).hit;
 	}
 
 	int MIDItoScore::selectNoteLane(const NoteFormat &format, const noteevent_const_itr_t &note) {
@@ -107,7 +150,8 @@ namespace miditoscore {
 	}
 
 
-	void MIDItoScore::createScoreInBuffer(std::vector<std::string>& scoreData, std::vector<bool> &isHoldStarted, const NoteFormat & format, const noteevent_const_itr_t &begin_it, const noteevent_const_itr_t &end_it) {
+	int MIDItoScore::createScoreInBuffer(std::vector<std::string>& scoreData, std::vector<bool> &isHoldStarted, const NoteFormat & format, const noteevent_const_itr_t &begin_it, const noteevent_const_itr_t &end_it) {
+		int ret = Status::S_OK;
 
 		for (auto &sd : scoreData) sd.clear();
 
@@ -131,8 +175,14 @@ namespace miditoscore {
 
 			// get lane number
 			int laneNum = selectNoteLane(format, it);
-			if (laneNum < 0)
+			if (laneNum < 0) {
+				if (it->type == midireader::MidiEvent::NoteOn)
+					deviatedNotes.push_back(*it);
+
+				ret |= Status::S_EXIST_DEVIATEDNOTES;
 				continue;
+			}
+				
 
 
 			// select note type
@@ -148,8 +198,30 @@ namespace miditoscore {
 			int offset = pos.get().n;
 
 
+			// check whether there is not the note at the offset position.
+			if (scoreData.at(laneNum).at(offset) != '0') {
+				if (it->type == midireader::MidiEvent::NoteOn)
+					concurrentNotes.push_back(*it);
+
+				ret |= Status::E_EXIST_CONCURRENTNOTES;
+			}
+
+
+			// write to buffer
 			scoreData.at(laneNum).at(offset) = ('0' + static_cast<int>(noteType));
+
+
+			// aggregate
+			noteAggregate.at(laneNum).increment(noteType);
 		}
+
+		return ret;
+	}
+
+	void MIDItoScore::clear() {
+		concurrentNotes.clear();
+		deviatedNotes.clear();
+		noteAggregate.clear();
 	}
 
 	NoteType MIDItoScore::selectNoteType(const noteevent_const_itr_t &event, const NoteFormat &format, std::vector<bool>::iterator isHoldStarted) {
@@ -176,6 +248,9 @@ namespace miditoscore {
 		return noteType;
 	}
 
+
+	bool Success(int s) { return s >= 0; };
+	bool Failed(int s) { return s < 0; };
 
 
 }

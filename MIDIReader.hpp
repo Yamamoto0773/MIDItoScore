@@ -79,6 +79,7 @@ namespace midireader {
 		long time;
 		int bar;
 		float tempo;
+		math::Fraction posInBar;
 	};
 
 	struct NoteEvent {

@@ -156,6 +156,7 @@ namespace midireader {
 		for (auto &e : tempoEvent) {
 			auto ret = calcScoreTime(e.time);
 			e.bar = ret.bar;
+			e.posInBar = ret.posInBar;
 		}
 
 

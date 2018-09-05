@@ -436,6 +436,8 @@ int main() {
 	}
 
 
+	cout << "\nƒvƒƒOƒ‰ƒ€‚ğI—¹‚·‚é‚É‚ÍEnter‚ğ‰Ÿ‚µ‚Ä‚­‚¾‚³‚¢\n";
+	cin.ignore();
 
-
+	return 0;
 }

@@ -1,4 +1,4 @@
-
+﻿
 //
 // 2018 (c) Nanami Yamamoto
 // This class is used to treat the decimal as a fraction.

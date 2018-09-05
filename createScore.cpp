@@ -1,4 +1,4 @@
-#include "MIDItoScore.hpp"
+ï»¿#include "MIDItoScore.hpp"
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
@@ -114,12 +114,12 @@ int main() {
 	loopFlag = true;
 
 	while (loopFlag) {
-		cout << "‘g”Ô†‚ğ“ü—Í‚µ‚Ä‰º‚³‚¢(3Œ…)\n>";
+		cout << "çµ„ç•ªå·ã‚’å…¥åŠ›ã—ã¦ä¸‹ã•ã„(3æ¡)\n>";
 
 		if (getNumber(classNum, 3)) {
 			loopFlag = false;
 		} else {
-			cout << "[!] “ü—ÍƒGƒ‰[‚Å‚·D3Œ…‚Ì”¼Šp”š‚Å“ü—Í‚µ‚Ä‰º‚³‚¢\n";
+			cout << "[!] å…¥åŠ›ã‚¨ãƒ©ãƒ¼ã§ã™ï¼3æ¡ã®åŠè§’æ•°å­—ã§å…¥åŠ›ã—ã¦ä¸‹ã•ã„\n";
 		}
 	}
 
@@ -130,7 +130,7 @@ int main() {
 	Status ret;
 
 	while (loopFlag) {
-		cout << "MIDIƒtƒ@ƒCƒ‹‚Ö‚ÌƒpƒX‚ğ“ü—Í‚µ‚Ä‰º‚³‚¢(\"‚â\'‚ª‚Â‚¢‚½‚Ü‚Ü‚Å‚àOK‚Å‚·)\n>";
+		cout << "MIDIãƒ•ã‚¡ã‚¤ãƒ«ã¸ã®ãƒ‘ã‚¹ã‚’å…¥åŠ›ã—ã¦ä¸‹ã•ã„(\"ã‚„\'ãŒã¤ã„ãŸã¾ã¾ã§ã‚‚OKã§ã™)\n>";
 
 		std::string filePath;
 		char str[256];
@@ -150,37 +150,37 @@ int main() {
 		ret = midir.openAndRead(filePath);
 
 		if (ret == Status::E_CANNOT_OPEN_FILE) {
-			cout << "[!] ƒtƒ@ƒCƒ‹‚ªŠJ‚¯‚Ü‚¹‚ñ.ƒpƒX‚ğŠm”F‚µ‚Ä‰º‚³‚¢\n";
+			cout << "[!] ãƒ•ã‚¡ã‚¤ãƒ«ãŒé–‹ã‘ã¾ã›ã‚“.ãƒ‘ã‚¹ã‚’ç¢ºèªã—ã¦ä¸‹ã•ã„\n";
 		} else if (ret == Status::E_INVALID_ARG) {
-			cout << "[!] ƒpƒX‚ª‹ó‚Å‚·D\n";
+			cout << "[!] ãƒ‘ã‚¹ãŒç©ºã§ã™ï¼\n";
 		} else {
 			loopFlag = false;
 		}
 	}
 
 
-	cout << "\nMIDIƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚ñ‚Å‚¢‚Ü‚·... ";
+	cout << "\nMIDIãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚“ã§ã„ã¾ã™... ";
 
 	// print result of reading the midi file
 	switch (ret) {
 	case midireader::Status::E_UNSUPPORTED_FORMAT:
-		cout << "[!] ‚±‚ÌƒtƒH[ƒ}ƒbƒg‚ÍƒTƒ|[ƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñ.\n";
+		cout << "[!] ã“ã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“.\n";
 		return 0;
 	case midireader::Status::E_INVALID_FILE:
-		cout << "[!] MIDIƒtƒ@ƒCƒ‹‚ª”j‘¹‚µ‚Ä‚¢‚Ü‚·\n";
+		cout << "[!] MIDIãƒ•ã‚¡ã‚¤ãƒ«ãŒç ´æã—ã¦ã„ã¾ã™\n";
 		return 0;
 	case midireader::Status::S_OK:
-		cout << "“Ç‚İ‚İŠ®—¹\n\n";
+		cout << "èª­ã¿è¾¼ã¿å®Œäº†\n\n";
 		break;
 	case midireader::Status::S_NO_EMBED_TIMESIGNATURE:
-		cout << "[!] MIDIƒtƒ@ƒCƒ‹‚É”qî•ñ‚ª–„‚ß‚Ü‚ê‚Ä‚¢‚Ü‚¹‚ñ.\n";
+		cout << "[!] MIDIãƒ•ã‚¡ã‚¤ãƒ«ã«æ‹å­æƒ…å ±ãŒåŸ‹ã‚è¾¼ã¾ã‚Œã¦ã„ã¾ã›ã‚“.\n";
 		return 0;
 	default:
 		break;
 	}
 
 	if (midir.getTempoEvent().empty()) {
-		cout << "[!] MIDIƒtƒ@ƒCƒ‹‚Éƒeƒ“ƒ|î•ñ‚ª–„‚ß‚Ü‚ê‚Ä‚¢‚Ü‚¹‚ñ.\n";
+		cout << "[!] MIDIãƒ•ã‚¡ã‚¤ãƒ«ã«ãƒ†ãƒ³ãƒæƒ…å ±ãŒåŸ‹ã‚è¾¼ã¾ã‚Œã¦ã„ã¾ã›ã‚“.\n";
 		return 0;
 	}
 
@@ -188,7 +188,7 @@ int main() {
 
 
 	// get interval
-	cout << "‘Å‚¿‚İ‚Ég‚Á‚½‰¹’ö‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢ (—á:C3, D#3)\n";
+	cout << "æ‰“ã¡è¾¼ã¿ã«ä½¿ã£ãŸéŸ³ç¨‹ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ (ä¾‹:C3, D#3)\n";
 
 
 	std::vector<std::string> intervalList;
@@ -197,19 +197,19 @@ int main() {
 		while (loopFlag) {
 
 			// print lane position;
-			// ex. if i = 1, print " ¡  "
-			for (size_t j = 0; j < i; j++) cout << " ";
-			cout << "¡";
-			for (size_t j = 4 - i - 1; j > 0; j--) cout << " ";
+			// ex. if i = 1, print "â–¡â– â–¡â–¡"
+			for (size_t j = 0; j < i; j++) cout << "â–¡";
+			cout << "â– ";
+			for (size_t j = 4 - i - 1; j > 0; j--) cout << "â–¡";
 
-			cout << " ¶‚©‚ç" << i+1 << "”Ô–Ú‚ÌƒŒ[ƒ“‚Ì‰¹’ö >";
+			cout << " å·¦ã‹ã‚‰" << i+1 << "ç•ªç›®ã®ãƒ¬ãƒ¼ãƒ³ã®éŸ³ç¨‹ >";
 
 			std::string str;
 			if (getInterval(str)) {
 				intervalList.push_back(str);
 				loopFlag = false;
 			} else {
-				cout << "[!] ‰¹–¼‚Æ‚µ‚Ä³‚µ‚­‚ ‚è‚Ü‚¹‚ñD\n";
+				cout << "[!] éŸ³åã¨ã—ã¦æ­£ã—ãã‚ã‚Šã¾ã›ã‚“ï¼\n";
 			}
 		}
 	}
@@ -249,20 +249,20 @@ int main() {
 	// ---------------------------------------------------
 	// write score
 
-	cout << "\n•ˆ–Êƒf[ƒ^‚ğì¬‚µ‚Ü‚·\n";
+	cout << "\nè­œé¢ãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆã—ã¾ã™\n";
 
 	std::ofstream score;
 	score.open(scoreName.str());
 
 
 	score << "begin:header\n\n";
-	score << u8"id:<‹ÈID>" << '\n';
-	score << u8"title:<‹È–¼>" << '\n';
-	score << u8"artist:<ƒA[ƒeƒBƒXƒg–¼>" << '\n';
+	score << u8"id:<æ›²ID>" << '\n';
+	score << u8"title:<æ›²å>" << '\n';
+	score << u8"artist:<ã‚¢ãƒ¼ãƒ†ã‚£ã‚¹ãƒˆå>" << '\n';
 
 
 	// write tempo
-	cout << "ƒeƒ“ƒ|î•ñ\n";
+	cout << "ãƒ†ãƒ³ãƒæƒ…å ±\n";
 	score << '\n';
 
 	const auto tempo = midir.getTempoEvent();
@@ -278,18 +278,18 @@ int main() {
 			<< setw(6) << fixed << setprecision(3) << t.tempo
 			<< '\n';
 
-		cout << "¬ß:"
+		cout << "å°ç¯€:"
 			<< setfill('0') << setw(3) << t.bar
-			<< " ¬ß“àˆÊ’u:"
+			<< " å°ç¯€å†…ä½ç½®:"
 			<< t.posInBar.get_str()
-			<< " ƒeƒ“ƒ|:"
+			<< " ãƒ†ãƒ³ãƒ:"
 			<< setw(6) << fixed << setprecision(3) << t.tempo
 			<< '\n';
 	}
 
 
 	// write time signature
-	cout << "\n”qî•ñ\n";
+	cout << "\næ‹å­æƒ…å ±\n";
 
 	const auto beat = midir.getBeatEvent();
 	for (const auto b : beat) {
@@ -302,9 +302,9 @@ int main() {
 			<< b.beat.get_str()
 			<< '\n';
 
-		cout << "¬ß:"
+		cout << "å°ç¯€:"
 			<< setfill('0') << setw(3) << b.bar
-			<< " ”q:"
+			<< " æ‹å­:"
 			<< b.beat.get_str()
 			<< '\n';
 	}
@@ -326,15 +326,15 @@ int main() {
 		cout << '\n';
 		switch (targetTrackName) {
 		case '1':
-			cout << "easy•ˆ–Ê‚ğì¬’†‚Å‚·... ";
+			cout << "easyè­œé¢ã‚’ä½œæˆä¸­ã§ã™... ";
 			score << "begin:easy\n\n";
 			break;
 		case '2':
-			cout << "normal•ˆ–Ê‚ğì¬’†‚Å‚·... ";
+			cout << "normalè­œé¢ã‚’ä½œæˆä¸­ã§ã™... ";
 			score << "begin:normal\n\n";
 			break;
 		case '3':
-			cout << "hard•ˆ–Ê‚ğì¬’†‚Å‚·... ";
+			cout << "hardè­œé¢ã‚’ä½œæˆä¸­ã§ã™... ";
 			score << "begin:hard\n\n";
 			break;
 		}
@@ -346,24 +346,24 @@ int main() {
 
 		// print return value
 		if (ret == miditoscore::Status::S_OK)
-			cout << "Š®—¹\n";
+			cout << "å®Œäº†\n";
 		else {
-			cout << "ƒGƒ‰[\n";
+			cout << "ã‚¨ãƒ©ãƒ¼\n";
 
 			if (isInclude(ret, miditoscore::Status::E_EXIST_CONCURRENTNOTES)) {
-				cout << "[!] “¯‚¶ƒ^ƒCƒ~ƒ“ƒO‚Ìƒm[ƒc‚ª‘¶İ‚µ‚Ä‚¢‚Ü‚·D\n";
-				cout << " ->’·‰Ÿ‚µ‚ÌI“_‚Æn“_‚ªd‚È‚Á‚Ä‚¢‚È‚¢‚©ƒ`ƒFƒbƒN‚µ‚Ä‰º‚³‚¢\n";
-				cout << "-- –â‘è‚Ì‚ ‚éƒm[ƒc --\n";
+				cout << "[!] åŒã˜ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã®ãƒãƒ¼ãƒ„ãŒå­˜åœ¨ã—ã¦ã„ã¾ã™ï¼\n";
+				cout << " ->é•·æŠ¼ã—ã®çµ‚ç‚¹ã¨å§‹ç‚¹ãŒé‡ãªã£ã¦ã„ãªã„ã‹ãƒã‚§ãƒƒã‚¯ã—ã¦ä¸‹ã•ã„\n";
+				cout << "-- å•é¡Œã®ã‚ã‚‹ãƒãƒ¼ãƒ„ --\n";
 
 				int cnt = 0;
 				const auto notes = toscore.getConcurrentNotes();
 				for (auto n : notes) {
 					using namespace std;
-					cout << "¬ß:"
+					cout << "å°ç¯€:"
 						<< setfill('0') << setw(3) << n.bar
-						<< " ¬ß“àˆÊ’u:"
+						<< " å°ç¯€å†…ä½ç½®:"
 						<< n.posInBar.get_str()
-						<< " ‰¹’ö:"
+						<< " éŸ³ç¨‹:"
 						<< n.interval
 						<< '\n';
 
@@ -372,23 +372,23 @@ int main() {
 				}
 
 				if (toscore.getConcurrentNotes().size() > 10)
-					cout << "...‘¼" << notes.size() - 10 << "ƒR\n";
+					cout << "...ä»–" << notes.size() - 10 << "ã‚³\n";
 
 				cout << '\n';
 			}
 			if (isInclude(ret, miditoscore::Status::S_EXIST_DEVIATEDNOTES)) {
-				cout << "[!] w’è‚³‚ê‚½‰¹’ö‚É“–‚Ä‚Í‚Ü‚ç‚È‚¢ƒm[ƒc‚ª‘¶İ‚µ‚Ä‚¢‚Ü‚·.\n";
-				cout << "-- –â‘è‚Ì‚ ‚éƒm[ƒc --\n";
+				cout << "[!] æŒ‡å®šã•ã‚ŒãŸéŸ³ç¨‹ã«å½“ã¦ã¯ã¾ã‚‰ãªã„ãƒãƒ¼ãƒ„ãŒå­˜åœ¨ã—ã¦ã„ã¾ã™.\n";
+				cout << "-- å•é¡Œã®ã‚ã‚‹ãƒãƒ¼ãƒ„ --\n";
 
 				int cnt = 0;
 				auto notes = toscore.getDeviatedNotes();
 				for (auto n : notes) {
 					using namespace std;
-					cout << "¬ß:"
+					cout << "å°ç¯€:"
 						<< setfill('0') << setw(3) << n.bar
-						<< " ¬ß“àˆÊ’u:"
+						<< " å°ç¯€å†…ä½ç½®:"
 						<< n.posInBar.get_str()
-						<< " ‰¹’ö:"
+						<< " éŸ³ç¨‹:"
 						<< n.interval
 						<< '\n';
 
@@ -397,13 +397,13 @@ int main() {
 				}
 
 				if (notes.size() > 10)
-					cout << "...‘¼" << notes.size() - 10 << "ƒR\n";
+					cout << "...ä»–" << notes.size() - 10 << "ã‚³\n";
 
 				cout << '\n';
 			}
 		}
 
-		cout << "--ƒm[ƒc“à–ó-----\n";
+		cout << "--ãƒãƒ¼ãƒ„å†…è¨³-----\n";
 		cout <<	"    |";
 		for (auto i : intervalList) {
 			cout << std::setfill(' ') << std::setw(4) << i << '|';
@@ -439,7 +439,7 @@ int main() {
 	score.close();
 	midir.close();
 
-	cout << "\nƒvƒƒOƒ‰ƒ€‚ğI—¹‚·‚é‚É‚ÍEnter‚ğ‰Ÿ‚µ‚Ä‚­‚¾‚³‚¢\n";
+	cout << "\nãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’çµ‚äº†ã™ã‚‹ã«ã¯Enterã‚’æŠ¼ã—ã¦ãã ã•ã„\n";
 	cin.ignore();
 
 	return 0;

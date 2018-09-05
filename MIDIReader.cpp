@@ -1,4 +1,4 @@
-#include "MIDIReader.hpp"
+﻿#include "MIDIReader.hpp"
 
 #include <cmath>
 

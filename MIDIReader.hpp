@@ -1,4 +1,4 @@
-
+﻿
 // 2018/8/11, written by Nanami Yamamoto.
 //
 // MIDIReader

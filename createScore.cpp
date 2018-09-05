@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
-#include <cctype>
 
 
 bool isNumber(char ch) {
@@ -217,7 +216,7 @@ int main() {
 
 	// to upper
 	for (auto &i : intervalList) {
-		std::transform(i.begin(), i.end(), i.begin(), std::toupper);
+		std::transform(i.begin(), i.end(), i.begin(), ::toupper);
 	}
 
 
@@ -314,7 +313,7 @@ int main() {
 	// write note position
 	for (char targetTrackName = '1'; targetTrackName <= '3'; targetTrackName++) {
 
-		size_t trackNum = -1;
+		int trackNum = -1;
 		const auto tracks = midir.getTrackList();
 		trackNum = searchTrack(tracks, std::string(1, targetTrackName));
 		if (trackNum < 0) {

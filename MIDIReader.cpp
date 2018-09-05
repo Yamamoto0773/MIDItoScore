@@ -51,9 +51,11 @@ namespace midireader {
 		openAndRead(fileName);
 	}
 
-	Status MIDIReader::openAndRead(const std::string &fileName) {
+	Status MIDIReader::openAndRead(const std::string &fileName, bool isYamaha) {
 		if (fileName.empty())
 			return Status::E_INVALID_ARG;
+
+		this->isYamaha = isYamaha;
 
 		if (midi.is_open())
 			close();
@@ -274,7 +276,7 @@ namespace midireader {
 		return beatEvent.cbegin()->beat;
 	}
 
-	std::string MIDIReader::toIntervalStr(int noteNum) {
+	std::string MIDIReader::toIntervalStr(int noteNum, bool isYamaha) {
 		std::string intervalStr;
 
 
@@ -320,7 +322,11 @@ namespace midireader {
 		}
 
 		// add number
-		intervalStr += std::to_string(noteNum/12 -1);
+		if (isYamaha)
+			intervalStr += std::to_string(noteNum/12 - 2);
+		else
+			intervalStr += std::to_string(noteNum/12 - 1);
+
 
 
 		return intervalStr;
@@ -455,7 +461,7 @@ namespace midireader {
 				evt.channel = status & 0x0f;
 				// get note number
 				read(tmp, 1);
-				evt.interval = toIntervalStr(btoi(tmp));
+				evt.interval = toIntervalStr(btoi(tmp), isYamaha);
 				// get velocity
 				read(tmp, 1);
 				evt.velocity = btoi(tmp);

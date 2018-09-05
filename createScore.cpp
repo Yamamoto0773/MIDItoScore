@@ -231,15 +231,14 @@ int main() {
 	// create score file name
 	std::stringstream scoreName;
 	time_t t = time(nullptr);
-	tm lt;
-	localtime_s(&lt, &t);
+	tm *lt = localtime(&t);
 
 	{
 		using namespace std;
 		scoreName << classNum;
 		scoreName << '_';
-		scoreName << setfill('0') << setw(2) << lt.tm_mon + 1;
-		scoreName << setfill('0') << setw(2) << lt.tm_mday;
+		scoreName << setfill('0') << setw(2) << lt->tm_mon + 1;
+		scoreName << setfill('0') << setw(2) << lt->tm_mday;
 		scoreName << ".txt";
 	}
 

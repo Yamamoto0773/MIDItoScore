@@ -436,6 +436,9 @@ int main() {
 	}
 
 
+	score.close();
+	midir.close();
+
 	cout << "\nƒvƒƒOƒ‰ƒ€‚ðI—¹‚·‚é‚É‚ÍEnter‚ð‰Ÿ‚µ‚Ä‚­‚¾‚³‚¢\n";
 	cin.ignore();
 

@@ -29,7 +29,7 @@ bool getNumber(int &num, size_t digit) {
 			break;
 		}
 	}
-	
+
 	std::cin.ignore();
 
 	return ret;
@@ -48,6 +48,9 @@ int searchTrack(const std::vector<midireader::Track> &tracks, const std::string 
 	return trackNum;
 }
 
+bool isInclude(int val, int flag) {
+	return (val & flag) == flag;
+}
 
 
 bool getInterval(std::string &interval) {
@@ -238,7 +241,7 @@ int main() {
 		scoreName << setfill('0') << setw(2) << lt.tm_mon + 1;
 		scoreName << setfill('0') << setw(2) << lt.tm_mday;
 		scoreName << ".txt";
-	}											  
+	}
 
 
 
@@ -341,55 +344,64 @@ int main() {
 
 		score << "\nend\n\n";
 
-		switch (ret) {
-		case miditoscore::Status::S_OK:
+		// print return value
+		if (ret == miditoscore::Status::S_OK)
 			cout << "完了\n";
-			break;
-		case miditoscore::Status::E_EXIST_CONCURRENTNOTES:
-			cout << "[!] 同じタイミングのノーツが存在しています．";
-			cout << "長押しの終点と始点が重なっていないかチェックして下さい\n";
-			cout << "-- 問題のあるノーツ --\n";
-			{
-				auto notes = toscore.getConcurrentNotes();
-				for (auto it = notes.cbegin(); it != notes.cbegin()+10; it++) {
+		else {
+			cout << "エラー\n";
+
+			if (isInclude(ret, miditoscore::Status::E_EXIST_CONCURRENTNOTES)) {
+				cout << "[!] 同じタイミングのノーツが存在しています．\n";
+				cout << " ->長押しの終点と始点が重なっていないかチェックして下さい\n";
+				cout << "-- 問題のあるノーツ --\n";
+
+				int cnt = 0;
+				const auto notes = toscore.getConcurrentNotes();
+				for (auto n : notes) {
 					using namespace std;
 					cout << "小節:"
-						<< setfill('0') << setw(3) << it->bar
+						<< setfill('0') << setw(3) << n.bar
 						<< " 小節内位置:"
-						<< it->posInBar.get_str()
+						<< n.posInBar.get_str()
 						<< " 音程:"
-						<< it->interval
+						<< n.interval
 						<< '\n';
+
+					if (++cnt >= 10)
+						break;
 				}
 
-				if (notes.size() > 10)
+				if (toscore.getConcurrentNotes().size() > 10)
 					cout << "...他" << notes.size() - 10 << "コ\n";
+
+				cout << '\n';
 			}
-			break;
-		case miditoscore::Status::S_EXIST_DEVIATEDNOTES:
-			cout << "[!] 指定された音程に当てはまらないノーツが存在しています.\n";
-			cout << "-- 問題のあるノーツ --\n";
-			{
+			if (isInclude(ret, miditoscore::Status::S_EXIST_DEVIATEDNOTES)) {
+				cout << "[!] 指定された音程に当てはまらないノーツが存在しています.\n";
+				cout << "-- 問題のあるノーツ --\n";
+
+				int cnt = 0;
 				auto notes = toscore.getDeviatedNotes();
-				for (auto it = notes.cbegin(); it != notes.cbegin()+10; it++) {
+				for (auto n : notes) {
 					using namespace std;
 					cout << "小節:"
-						<< setfill('0') << setw(3) << it->bar
+						<< setfill('0') << setw(3) << n.bar
 						<< " 小節内位置:"
-						<< it->posInBar.get_str()
+						<< n.posInBar.get_str()
 						<< " 音程:"
-						<< it->interval
+						<< n.interval
 						<< '\n';
+
+					if (++cnt >= 10)
+						break;
 				}
 
 				if (notes.size() > 10)
 					cout << "...他" << notes.size() - 10 << "コ\n";
-			}
-			break;
-		default:
-			break;
-		}
 
+				cout << '\n';
+			}
+		}
 
 		cout << "--ノーツ内訳-----\n";
 		cout <<	"    |";
@@ -411,14 +423,14 @@ int main() {
 		size_t cnt = 0;
 		cout << "all |";
 		for (auto i : intervalList) {
-			cout << std::setfill(' ') << std::setw(4) 
+			cout << std::setfill(' ') << std::setw(4)
 				<< toscore.numofHoldNotes(i) + toscore.numofHitNotes(i) << '|';
 
 			cnt += toscore.numofHoldNotes(i) + toscore.numofHitNotes(i);
 		}
 		cout << '\n';
 		cout << "total:" << cnt << '\n';
-	
+
 
 
 	}

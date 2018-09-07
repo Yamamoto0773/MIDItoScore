@@ -24,18 +24,22 @@ SMF(Standard MIDI File)のうち，フォーマット0と1に対応していま�
 
 int main() {
 
+	midireader::MIDIReader midi;
+
+	midi.openAndRead("sample.mid");
+
 	miditoscore::MIDItoScore midiToScore;
-	midiToScore.readMidi("sample.mid");
-
 	miditoscore::NoteFormat format;
-	format.holdMaxVelocity = 30;
-	format.laneAllocation.resize(4);
-	format.laneAllocation = {"C5", "D5", "E5", "F5"};
 
-	midiToScore.writeScore("score.txt", format);
-	
+	format.holdMaxVelocity = 50;
+	format.laneAllocation.resize(2);
+	format.laneAllocation = { "C2", "D2" };
+
+	midiToScore.writeScore("score.txt", format, midi, 3);
+
 	return 0;
 }
+
 ```
 上の例では，"sample.mid"というMIDIファイルを"score.txt"という譜面ファイルに書き出しています．
 また，同時に譜面ファイルに書き出すときのフォーマットを指定しています．

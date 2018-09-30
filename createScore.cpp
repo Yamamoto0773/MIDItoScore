@@ -5,7 +5,7 @@
 
 
 bool isNumber(char ch) {
-	return '0' <= ch && ch < '9';
+	return '0' <= ch && ch <= '9';
 }
 
 bool isAlphabet(char ch) {

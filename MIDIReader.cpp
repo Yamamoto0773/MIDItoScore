@@ -547,10 +547,16 @@ namespace midireader {
 				read(tmp, 2);
 			} else if (status_upper == 0xb) {
 				// controll change
-				read(tmp, 2);
 				read(tmp, 1);
-				if (btoi(tmp) > 0x7f)
-					midi.seekg(-1, std::ios::cur);
+				unsigned char ctrlNum = btoi(tmp);
+				read(tmp, 1);
+				
+				if (0x78 <= ctrlNum && ctrlNum <= 0x7f) {
+					read(tmp, 1);
+					unsigned char mode = btoi(tmp);
+					if (mode == 4)	// MIDI mode to be mode 4(OMNI OFF / MONO)
+						midi.seekg(-1, std::ios::cur);
+				}
 			} else if (status_upper == 0xc) {
 				// program change
 				read(tmp, 1);

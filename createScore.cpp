@@ -350,7 +350,8 @@ int main() {
 
 			if (isInclude(ret, miditoscore::Status::E_EXIST_CONCURRENTNOTES)) {
 				cout << "[!] 同じタイミングのノーツが存在しています．\n";
-				cout << " ->長押しの終点と始点が重なっていないかチェックして下さい\n";
+				cout << " ->長押しの後にあるノーツと繋がっていないかチェックしてください\n";
+				cout << " ->ノーツが重なっていないかチェックしてください\n";
 				cout << "-- 問題のあるノーツ --\n";
 
 				int cnt = 0;

@@ -268,3 +268,9 @@ main.cpp
 *.vcxproj
 *.vcxproj.filters
 *.txt
+*.out
+
+# vscode
+launch.json
+settings.json
+info.plist

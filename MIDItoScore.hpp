@@ -38,7 +38,7 @@ namespace miditoscore {
 
 
 	struct NoteFormat {
-		int holdMaxVelocity;
+		math::Fraction holdMinLength;
 		std::vector<std::string> laneAllocation;
 	};
 
@@ -47,6 +47,14 @@ namespace miditoscore {
 		HIT,
 		HOLD_BEGIN,
 		HOLD_END
+	};
+
+	struct ScoreNote {
+		NoteType type;
+		const midireader::NoteEvent* evt;
+
+		ScoreNote(NoteType _type, const midireader::NoteEvent* _evt) :
+			type(_type), evt(_evt) {};
 	};
 
 	namespace Status {
@@ -63,13 +71,16 @@ namespace miditoscore {
 
 
 	class MIDItoScore {
+		using noteevent_const_itr_t = std::vector<midireader::NoteEvent>::const_iterator;
 
 	public:
 		MIDItoScore();
 		~MIDItoScore();
 
-		int writeScore(const std::string &fileName, const NoteFormat &format, const midireader::MIDIReader &idi, size_t trackNum);
-		int writeScore(std::ostream &stream, const NoteFormat &format, const midireader::MIDIReader &midi, size_t trackNum);
+		int writeScore(const std::string &fileName, const NoteFormat &format, const std::vector<midireader::NoteEvent> &notes, size_t trackNum);
+		int writeScore(std::ostream &stream, const NoteFormat &format, const std::vector<midireader::NoteEvent> &notes, size_t trackNum);
+
+		int createScoreString(const std::vector<ScoreNote>& scoreNotes, std::string& scoreString);
 
 		const std::vector<midireader::NoteEvent> &getConcurrentNotes() const { return concurrentNotes; }
 		const std::vector<midireader::NoteEvent> &getDeviatedNotes() const { return deviatedNotes; }
@@ -88,7 +99,7 @@ namespace miditoscore {
 				case miditoscore::NoteType::HIT:
 					hit++;
 					break;
-				case miditoscore::NoteType::HOLD_BEGIN:
+				case miditoscore::NoteType::HOLD_END:
 					hold++;
 					break;
 				default:
@@ -106,29 +117,7 @@ namespace miditoscore {
 		std::vector<midireader::NoteEvent> deviatedNotes;
 		std::vector<NoteAggregate> noteAggregate;
 
-
-		using noteevent_const_itr_t = std::vector<midireader::NoteEvent>::const_iterator;
-
-		int selectNoteLane(const NoteFormat &format, const noteevent_const_itr_t &note);
-		NoteType selectNoteType(const noteevent_const_itr_t &note, const NoteFormat &format, std::vector<bool>::iterator isHoldStarted);
-		
-		void createDataLengthList(
-			std::vector<size_t> &dataLength, 
-			const NoteFormat &format,
-			std::vector<bool> &isHoldStarted,
-			const noteevent_const_itr_t &begin, 
-			const noteevent_const_itr_t &end
-			);
-
-		int createScoreInBuffer(
-			std::vector<std::string> &buffer,
-			std::vector<bool> &isHoldStarted,
-			const NoteFormat &format,
-			const noteevent_const_itr_t &begin_it,
-			const noteevent_const_itr_t &end_it
-			);
-
-
+		int selectNoteLane(const NoteFormat &format, const midireader::NoteEvent &note);
 
 		void clear();
 		

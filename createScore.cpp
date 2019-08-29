@@ -16,7 +16,7 @@ bool getNumber(int &num, size_t digit) {
 	bool ret = true;
 	num = 0;
 
-	for (int i = 0; i < digit; i++) {
+	for (size_t i = 0; i < digit; i++) {
 		char ch;
 
 		std::cin >> ch;
@@ -51,7 +51,6 @@ bool isInclude(int val, int flag) {
 	return (val & flag) == flag;
 }
 
-
 bool getInterval(std::string &interval) {
 	bool ret = true;
 	size_t progress = 0;
@@ -84,7 +83,6 @@ bool getInterval(std::string &interval) {
 			}
 		}
 
-
 		interval += ch;
 		progress++;
 
@@ -97,11 +95,32 @@ bool getInterval(std::string &interval) {
 	return ret;
 }
 
+bool toFraction(std::string& str, math::Fraction& frac) {
+	using std::cin;
 
+	size_t slashPos = str.find('/');
+	if (slashPos == std::string::npos)
+		return false;
 
+	int numer, denom;
+	try {
+		const auto numerStr = str.substr(0, slashPos);
+		numer = std::stoi(numerStr);
+		const auto denomStr = str.substr(slashPos + 1);
+		denom = std::stoi(denomStr);
+
+		frac.set(numer, denom); // may occured denom is zero exception
+	} catch (const std::exception&) {
+		return false;
+	}
+	
+	if (frac <= 0)
+		return false;
+
+	return true;
+}
 
 int main() {
-
 	using namespace midireader;
 	using std::cin;
 	using std::cout;
@@ -122,20 +141,18 @@ int main() {
 		}
 	}
 
-
 	// get the midi file path
 	MIDIReader midir;
 	loopFlag = true;
 	Status ret;
 
+	cout << "MIDIファイルへのパスを入力して下さい(\"や\'がついたままでもOKです)\n";
 	while (loopFlag) {
-		cout << "MIDIファイルへのパスを入力して下さい(\"や\'がついたままでもOKです)\n>";
-
+		cout << ">";
 		std::string filePath;
 		char str[256];
 		cin.getline(str, 256, '\n');
 		filePath = str;
-
 
 		// erase ' or "
 		if (!filePath.empty()) {
@@ -156,7 +173,6 @@ int main() {
 			loopFlag = false;
 		}
 	}
-
 
 	cout << "\nMIDIファイルを読み込んでいます... ";
 
@@ -183,12 +199,8 @@ int main() {
 		return 0;
 	}
 
-
-
-
 	// get interval
 	cout << "打ち込みに使った音程を入力してください (例:C3, D#3)\n";
-
 
 	std::vector<std::string> intervalList;
 	for (size_t i = 0; i < 4; i++) {
@@ -213,19 +225,37 @@ int main() {
 		}
 	}
 
-
 	// to upper
 	for (auto &i : intervalList) {
 		std::transform(i.begin(), i.end(), i.begin(), ::toupper);
 	}
 
+	// get hold minimal length
+	cout << "\n";
+	cout << "長押しノーツだと見なす，最小の長さを入力してください (例: 1/16)\n"
+		 << "(16分音符1つ分以上の長さのノーツを 長押しにしたい場合は 1/16と入力)\n";
+
+	math::Fraction holdMinLen;
+	while (true) {
+		cout << ">";
+		
+		char buf[6];
+		std::string str;
+		cin.getline(buf, 6, '\n');
+		str = buf;
+		
+		if (toFraction(str, holdMinLen)) {
+			break;
+		} else {
+			cout << "[!] 0より大きい分数を入力してください\n";
+		}
+	}
 
 	// set note format
 	miditoscore::MIDItoScore toscore;
 	miditoscore::NoteFormat format;
-	format.holdMaxVelocity = 63;
+	format.holdMinLength = holdMinLen;
 	format.laneAllocation = intervalList;
-
 
 	// create score file name
 	std::stringstream scoreName;
@@ -241,9 +271,6 @@ int main() {
 		scoreName << ".txt";
 	}
 
-
-
-
 	// ---------------------------------------------------
 	// write score
 
@@ -252,12 +279,10 @@ int main() {
 	std::ofstream score;
 	score.open(scoreName.str());
 
-
 	score << "begin:header\n\n";
-	score << u8"id:<曲ID>" << '\n';
-	score << u8"title:<曲名>" << '\n';
-	score << u8"artist:<アーティスト名>" << '\n';
-
+	score << u8"id:曲ID" << '\n';
+	score << u8"title:曲名" << '\n';
+	score << u8"artist:アーティスト名" << '\n';
 
 	// write tempo
 	cout << "テンポ情報\n";
@@ -285,7 +310,6 @@ int main() {
 			<< '\n';
 	}
 
-
 	// write time signature
 	cout << "\n拍子情報\n";
 
@@ -309,7 +333,6 @@ int main() {
 
 	score << "\nend\n\n";
 
-
 	// write note position
 	for (char targetTrackName = '1'; targetTrackName <= '3'; targetTrackName++) {
 
@@ -319,7 +342,6 @@ int main() {
 		if (trackNum < 0) {
 			continue;
 		}
-
 
 		cout << '\n';
 		switch (targetTrackName) {
@@ -337,8 +359,7 @@ int main() {
 			break;
 		}
 
-
-		auto ret = toscore.writeScore(score, format, midir, trackNum);
+		auto ret = toscore.writeScore(score, format, midir.getNoteEvent(trackNum), trackNum);
 
 		score << "\nend\n\n";
 
@@ -429,11 +450,7 @@ int main() {
 		}
 		cout << '\n';
 		cout << "total:" << cnt << '\n';
-
-
-
 	}
-
 
 	score.close();
 	midir.close();

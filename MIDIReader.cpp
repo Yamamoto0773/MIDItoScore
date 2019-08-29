@@ -41,13 +41,14 @@ namespace midireader {
 	bool Failed(Status s) { return static_cast<int>(s) < 0; };
 
 
-	MIDIReader::MIDIReader() {}
+	MIDIReader::MIDIReader()
+		: isYamaha(true), adjustAmplitude(0) {}
 
 	MIDIReader::~MIDIReader() {
 		close();
 	}
 
-	MIDIReader::MIDIReader(const std::string &fileName) {
+	MIDIReader::MIDIReader(const std::string &fileName) : MIDIReader() {
 		openAndRead(fileName);
 	}
 
@@ -247,7 +248,7 @@ namespace midireader {
 
 		ScoreTime bestAns = calcScoreTime(origin);
 
-		if (bestAns.posInBar.get().d > threshold) {
+		if (static_cast<size_t>(bestAns.posInBar.get().d) > threshold) {
 
 			for (int offset = -amplitude_i; offset <= +amplitude_i; offset++) {
 				// skip if midiTime + offset => <underflow>

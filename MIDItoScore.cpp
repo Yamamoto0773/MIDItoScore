@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <numeric>
 
 namespace miditoscore {
 
@@ -12,65 +13,117 @@ namespace miditoscore {
 	MIDItoScore::~MIDItoScore() {}
 
 
-	int MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format, const midireader::MIDIReader &midi, size_t trackNum) {
+	int MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format, const std::vector<midireader::NoteEvent> &notes, size_t trackNum) {
 		std::ofstream scoreFile(fileName.c_str(), std::ios::app);
 		if (!scoreFile.is_open())
 			return Status::E_CANNOT_OPEN_FILE;
 
-		return writeScore(scoreFile, format, midi, trackNum);
+		return writeScore(scoreFile, format, notes, trackNum);
 	}
 
-	int MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format, const midireader::MIDIReader &midi, size_t trackNum) {
+	int MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format, const std::vector<midireader::NoteEvent> &notes, size_t trackNum) {
 		using namespace midireader;
-
+		
 		int ret = Status::S_OK;
 
 		clear();
+
 		noteFormat = format;
-
 		noteAggregate.resize(format.laneAllocation.size());
+		std::vector<std::vector<NoteEvent>> laneNotes(format.laneAllocation.size());
 
-
-
-		const auto &noteEvent = midi.getNoteEvent(trackNum);
-
-		size_t currentBar = 1;
-		noteevent_const_itr_t begin_it = noteEvent.cbegin();
-		noteevent_const_itr_t end_it = begin_it;
-
-		std::vector<std::string> scoreData;
-		scoreData.resize(format.laneAllocation.size());
-		std::vector<bool> isHoldStarted;
-		isHoldStarted.resize(format.laneAllocation.size());
-
-
-		while (end_it != noteEvent.cend()) {
-
-			// calculate range of the note event in current bar
-			for (end_it = begin_it; end_it != noteEvent.cend(); end_it++) {
-				if (end_it->bar != currentBar) break;
-			};
-
-
-			// create the score data in buffer
-			ret |= createScoreInBuffer(scoreData, isHoldStarted, format, begin_it, end_it);
-	
-
-			// write the score data to file.
-			for (auto sd = scoreData.cbegin(); sd != scoreData.cend(); sd++) {
-				if (sd->size() > 0) {
-					//printf("%d:%03d:%s\n", sd - scoreData.cbegin(), currentBar, sd->c_str());
-
-					using namespace std;
-					stream << sd - scoreData.cbegin() << ':'
-						<< setfill('0') << setw(3) << currentBar << ':'
-						<< sd->c_str() << endl;
+		// group by lane number
+		for (const auto& note : notes) {
+			int laneIndex = selectNoteLane(format, note);
+			if (laneIndex < 0) {
+				if (note.type == midireader::MidiEvent::NoteOn) {
+					deviatedNotes.push_back(note);
 				}
+
+				ret |= Status::S_EXIST_DEVIATEDNOTES;
+			} else {
+				laneNotes.at(laneIndex).push_back(note);
+			}
+		}
+
+		std::string scoreString;
+		size_t currentBar = 1;
+		std::vector<noteevent_const_itr_t> beginIterators(4);
+		std::vector<noteevent_const_itr_t> endIterators(4);
+		for (size_t i = 0; i < format.laneAllocation.size(); i++) {
+			beginIterators.at(i) = laneNotes.at(i).cbegin();
+			endIterators.at(i) = laneNotes.at(i).cbegin();
+		}
+		std::vector<bool> holdStarted(format.laneAllocation.size(), false);
+
+		while (true) {
+			for (size_t lane = 0; lane < format.laneAllocation.size(); lane++) {
+				auto& beginIt = beginIterators.at(lane);
+				auto& endIt = endIterators.at(lane);
+
+				// calculate range of current bar
+				for (endIt = beginIt; endIt != laneNotes.at(lane).cend(); endIt++) {
+					if (endIt->bar != currentBar) break;
+				};
+
+				// enumerate useable events to write score
+				std::vector<ScoreNote> scoreNotes;
+				for (auto it = beginIt; it != endIt; it++) {
+					if (it == beginIt && holdStarted.at(lane)) {
+						scoreNotes.emplace_back(NoteType::HOLD_END, &*it);
+						holdStarted.at(lane) = false;
+
+						// aggregate
+						noteAggregate.at(lane).increment(scoreNotes.back().type);
+					} else if (it->type == MidiEvent::NoteOn) {
+						// calculate note length
+						const math::Fraction end = (it + 1)->bar + (it + 1)->posInBar;
+						const math::Fraction beg = it->bar + it->posInBar;
+						const math::Fraction length = end - beg;
+
+						const bool isHold = (length >= format.holdMinLength);
+
+						if (isHold) {
+							scoreNotes.emplace_back(NoteType::HOLD_BEGIN, &*it);
+							if ((it + 1)->bar == currentBar) {
+								// hold end is in current bar
+								scoreNotes.emplace_back(NoteType::HOLD_END, &*(it+1));
+							} else {
+								// hold end is out of current bar
+								holdStarted.at(lane) = true;
+							}
+						} else {
+							scoreNotes.emplace_back(NoteType::HIT, &*it);
+						}
+
+						// aggregate
+						noteAggregate.at(lane).increment(scoreNotes.back().type);
+					}
+				}
+
+				if (scoreNotes.size() > 0) {
+					ret |= createScoreString(scoreNotes, scoreString);
+
+					// write the score data to file.
+					using namespace std;
+					stream << lane << ':'
+						<< setfill('0') << setw(3) << currentBar << ':'
+						<< scoreString << endl;
+				}
+				
+				// ready for next bar
+				beginIt = endIt;
 			}
 
+			// check loop condition
+			size_t numofEndedLanes = 0;
+			for (size_t lane = 0; lane < format.laneAllocation.size(); lane++) {
+				if (beginIterators.at(lane) == laneNotes.at(lane).cend()) numofEndedLanes++;
+			}
+			if (numofEndedLanes == format.laneAllocation.size()) {
+				break;
+			}
 
-			// go to next bar
-			begin_it = end_it;
 			currentBar++;
 		}
 
@@ -78,10 +131,44 @@ namespace miditoscore {
 		return ret;
 	}
 
+	int MIDItoScore::createScoreString(const std::vector<ScoreNote>& scoreNotes, std::string& scoreString) {
+		int ret = Status::S_OK;
+
+		// calculate line length of score data
+		size_t mininalUnit = 1;
+		for (auto it = scoreNotes.cbegin(); it != scoreNotes.cend(); it++) {
+			mininalUnit = std::lcm(mininalUnit, it->evt->posInBar.get().d);
+		}
+
+		// create empty score data
+		scoreString.resize(mininalUnit);
+		for (auto it = scoreString.begin(); it != scoreString.end(); it++) *it = '0';
+
+		// add note to the score data
+		for (auto it = scoreNotes.cbegin(); it != scoreNotes.cend(); it++) {
+			// calculate note offset
+			math::Fraction notePos(it->evt->posInBar);
+			math::Fraction unit(1, mininalUnit);
+			math::adjustDenom(notePos, unit);
+			size_t offset = notePos.get().n;
+
+			// check concurrent notes
+			if (scoreString.at(offset) != '0') {
+				concurrentNotes.push_back(*(it->evt));
+				ret |= Status::E_EXIST_CONCURRENTNOTES;
+			}
+
+			// write to buffer
+			scoreString.at(offset) = ('0' + static_cast<int>(it->type));
+		}
+
+		return ret;
+	}
+
 	size_t MIDItoScore::numofHoldNotes(const std::string & interval) const {
 		int pos = -1;
 
-		for (int i = 0; i < noteFormat.laneAllocation.size(); i++) {
+		for (size_t i = 0; i < noteFormat.laneAllocation.size(); i++) {
 			if (noteFormat.laneAllocation.at(i) == interval) {
 				pos = i;
 			}
@@ -96,7 +183,7 @@ namespace miditoscore {
 	size_t MIDItoScore::numofHitNotes(const std::string & interval) const {
 		int pos = -1;
 
-		for (int i = 0; i < noteFormat.laneAllocation.size(); i++) {
+		for (size_t i = 0; i < noteFormat.laneAllocation.size(); i++) {
 			if (noteFormat.laneAllocation.at(i) == interval) {
 				pos = i;
 			}
@@ -108,114 +195,12 @@ namespace miditoscore {
 		return noteAggregate.at(pos).hit;
 	}
 
-	int MIDItoScore::selectNoteLane(const NoteFormat &format, const noteevent_const_itr_t &note) {
-		auto lane_it = std::find(format.laneAllocation.begin(), format.laneAllocation.end(), note->interval);
+	int MIDItoScore::selectNoteLane(const NoteFormat &format, const midireader::NoteEvent &note) {
+		auto lane_it = std::find(format.laneAllocation.begin(), format.laneAllocation.end(), note.interval);
 		if (lane_it == format.laneAllocation.cend())
 			return -1;
 
 		return static_cast<int>(lane_it - format.laneAllocation.cbegin());
-	}
-
-	void MIDItoScore::createDataLengthList(std::vector<size_t>& dataLength, const NoteFormat & format, std::vector<bool> &isHoldStarted, const noteevent_const_itr_t &begin, const noteevent_const_itr_t &end) {
-		size_t numofLane = format.laneAllocation.size();
-
-		dataLength.clear();
-		dataLength.resize(numofLane);
-
-
-		std::vector<math::Fraction> barUnit;
-		barUnit.resize(numofLane);
-		for (auto &b : barUnit) b.set(0);
-
-		std::vector<bool> exist;
-		exist.resize(numofLane);
-
-		for (auto it = begin; it != end; it++) {
-			math::Fraction pos(it->posInBar);
-
-			int laneNumber = selectNoteLane(format, it);
-			if (laneNumber >= 0 &&
-				NoteType::NONE != selectNoteType(it, format, isHoldStarted.begin() + laneNumber)) {
-				exist.at(laneNumber) = true;
-				math::adjustDenom(barUnit.at(laneNumber), pos);
-			}
-		}
-
-		for (size_t i = 0; i < dataLength.size(); i++) {
-			if (exist.at(i))
-				dataLength.at(i) = barUnit.at(i).get().d;
-			else
-				dataLength.at(i) = 0;
-		}
-	}
-
-
-	int MIDItoScore::createScoreInBuffer(std::vector<std::string>& scoreData, std::vector<bool> &isHoldStarted, const NoteFormat & format, const noteevent_const_itr_t &begin_it, const noteevent_const_itr_t &end_it) {
-		int ret = Status::S_OK;
-
-		for (auto &sd : scoreData) sd.clear();
-
-		// calculate minimum unit which can express position of the note in a bar
-		std::vector<size_t> dataLengthList;
-		{
-			auto copy = isHoldStarted;
-			createDataLengthList(dataLengthList, format, copy, begin_it, end_it);
-		}
-
-		// create empty score data
-		auto len = dataLengthList.cbegin();
-		auto b = scoreData.begin();
-		for (; len != dataLengthList.cend(); len++, b++) {
-			for (size_t i = 0; i < *len; i++) (*b) += '0';
-		}
-
-
-		// add note to the score data
-		for (auto it = begin_it; it != end_it; it++) {
-
-			// get lane number
-			int laneNum = selectNoteLane(format, it);
-			if (laneNum < 0) {
-				if (it->type == midireader::MidiEvent::NoteOn)
-					deviatedNotes.push_back(*it);
-
-				ret |= Status::S_EXIST_DEVIATEDNOTES;
-				continue;
-			}
-				
-
-
-			// select note type
-			NoteType noteType = selectNoteType(it, format, isHoldStarted.begin() + laneNum);
-			if (noteType == NoteType::NONE)
-				continue;
-
-
-			// calculate note offset
-			math::Fraction pos(it->posInBar);
-			math::Fraction unit(1, static_cast<int>(dataLengthList.at(laneNum)));
-			math::adjustDenom(pos, unit);
-			int offset = pos.get().n;
-
-
-			// check whether there is not the note at the offset position.
-			if (scoreData.at(laneNum).at(offset) != '0') {
-				if (it->type == midireader::MidiEvent::NoteOn)
-					concurrentNotes.push_back(*it);
-
-				ret |= Status::E_EXIST_CONCURRENTNOTES;
-			}
-
-
-			// write to buffer
-			scoreData.at(laneNum).at(offset) = ('0' + static_cast<int>(noteType));
-
-
-			// aggregate
-			noteAggregate.at(laneNum).increment(noteType);
-		}
-
-		return ret;
 	}
 
 	void MIDItoScore::clear() {
@@ -223,31 +208,6 @@ namespace miditoscore {
 		deviatedNotes.clear();
 		noteAggregate.clear();
 	}
-
-	NoteType MIDItoScore::selectNoteType(const noteevent_const_itr_t &event, const NoteFormat &format, std::vector<bool>::iterator isHoldStarted) {
-		NoteType noteType = NoteType::NONE;
-
-		if (event->velocity <= format.holdMaxVelocity) {
-
-			if (event->type == midireader::MidiEvent::NoteOn) {
-				noteType = NoteType::HOLD_BEGIN;
-				*isHoldStarted = true;
-			} else if (*isHoldStarted) {
-				noteType = NoteType::HOLD_END;
-				*isHoldStarted = false;
-			}
-
-		} else {
-
-			if (event->type == midireader::MidiEvent::NoteOn) {
-				noteType = NoteType::HIT;
-			}
-
-		}
-
-		return noteType;
-	}
-
 
 	bool Success(int s) { return s >= 0; };
 	bool Failed(int s) { return s < 0; };

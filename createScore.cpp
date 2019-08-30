@@ -2,36 +2,15 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
+#include <array>
 
 
 bool isNumber(char ch) {
 	return '0' <= ch && ch <= '9';
 }
 
-bool isAlphabet(char ch) {
+bool isIntervalAlphabet(char ch) {
 	return ('a' <= ch && ch <= 'g') || ('A' <= ch && ch <= 'G');
-}
-
-bool getNumber(int &num, size_t digit) {
-	bool ret = true;
-	num = 0;
-
-	for (size_t i = 0; i < digit; i++) {
-		char ch;
-
-		std::cin >> ch;
-		if (isNumber(ch)) {
-			num *= 10;
-			num += atoi(&ch);
-		} else {
-			ret = false;
-			break;
-		}
-	}
-
-	std::cin.ignore();
-
-	return ret;
 }
 
 int searchTrack(const std::vector<midireader::Track> &tracks, const std::string searchName) {
@@ -51,48 +30,61 @@ bool isInclude(int val, int flag) {
 	return (val & flag) == flag;
 }
 
-bool getInterval(std::string &interval) {
-	bool ret = true;
-	size_t progress = 0;
-
-	while (true) {
-		char ch;
-
-		std::cin >> ch;
-
-		if (ch == ' ')
-			continue;
-
-		switch (progress) {
-		case 0:
-			if (!isAlphabet(ch)) {
-				ret = false;
-				continue;
-			}
-			break;
-		case 1:
-			if (ch != '#' && !isNumber(ch)) {
-				ret = false;
-				continue;
-			}
-			break;
-		case 2:
-			if (!isNumber(ch)) {
-				ret = false;
-				continue;
-			}
-		}
-
-		interval += ch;
-		progress++;
-
-		if (isNumber(ch))
-			break;
+bool toNumber(const std::string& str, int *number = nullptr) {
+	size_t numEndedPos;
+	int n;
+	try {
+		n = std::stoi(str, &numEndedPos);
+	} catch (const std::exception&) {
+		return false;
 	}
 
-	std::cin.ignore();
+	if (numEndedPos != str.length())
+		return false;
 
-	return ret;
+	if (number) {
+		*number = n;
+	}
+
+	return true;
+}
+
+bool toIntervalStr(std::string &str, std::string &intervalStr) {
+	intervalStr.clear();
+
+	if (str.length() < 2)
+		return false;
+
+	if (!isIntervalAlphabet(str.at(0)))
+		return false;
+
+	constexpr std::array<char, 5> sharpAttachable = {'C', 'D', 'F', 'G', 'A'};
+	const bool isAttachable = 
+		std::find_if(
+			sharpAttachable.cbegin(),
+			sharpAttachable.cend(),
+			[&](char ch) { return ch ==std::toupper(str.at(0)); }
+		) != sharpAttachable.cend();
+
+	if (!isAttachable && str.at(1) == '#')
+		return false;
+
+	std::string numStr;
+	if (str.at(1) == '#') {
+		numStr = str.substr(2);
+		intervalStr += str.substr(0, 2);
+	} else {
+		numStr = str.substr(1);
+		intervalStr += str.substr(0, 1);
+	}
+
+	int octave;
+	if (!toNumber(numStr, &octave))
+		return false;
+
+	intervalStr += std::to_string(octave);
+
+	return true;
 }
 
 bool toFraction(std::string& str, math::Fraction& frac) {
@@ -109,7 +101,7 @@ bool toFraction(std::string& str, math::Fraction& frac) {
 		const auto denomStr = str.substr(slashPos + 1);
 		denom = std::stoi(denomStr);
 
-		frac.set(numer, denom); // may occured denom is zero exception
+		frac.set(numer, denom); // may occured that denom is zero exception
 	} catch (const std::exception&) {
 		return false;
 	}
@@ -125,17 +117,17 @@ int main() {
 	using std::cin;
 	using std::cout;
 
-	bool loopFlag;
+	bool loopFlag = true;
 
 	// get class number
-	int classNum;
-	loopFlag = true;
-
+	cout << "組番号を入力して下さい(3桁)\n";
+	std::string classNumStr;
 	while (loopFlag) {
-		cout << "組番号を入力して下さい(3桁)\n>";
+		cout << ">";
+		std::getline(cin, classNumStr);
 
-		if (getNumber(classNum, 3)) {
-			loopFlag = false;
+		if (classNumStr.length() == 3 && toNumber(classNumStr)) {
+			break;
 		} else {
 			cout << "[!] 入力エラーです．3桁の半角数字で入力して下さい\n";
 		}
@@ -150,9 +142,7 @@ int main() {
 	while (loopFlag) {
 		cout << ">";
 		std::string filePath;
-		char str[256];
-		cin.getline(str, 256, '\n');
-		filePath = str;
+		std::getline(cin, filePath);
 
 		// erase ' or "
 		if (!filePath.empty()) {
@@ -202,22 +192,26 @@ int main() {
 	// get interval
 	cout << "打ち込みに使った音程を入力してください (例:C3, D#3)\n";
 
-	std::vector<std::string> intervalList;
-	for (size_t i = 0; i < 4; i++) {
+	std::vector<std::string> intervalList(4);
+	for (int lane = 3; lane >= 0; lane--) {
 		loopFlag = true;
 		while (loopFlag) {
-
 			// print lane position;
 			// ex. if i = 1, print "□■□□"
-			for (size_t j = 0; j < i; j++) cout << "□";
-			cout << "■";
-			for (size_t j = 4 - i - 1; j > 0; j--) cout << "□";
+			for (size_t i = 0; i < 4; i++) {
+				if (i == lane)
+					cout << "■";
+				else
+					cout << "□";
+			}
 
-			cout << " 左から" << i+1 << "番目のレーンの音程 >";
+			cout << " 右から" << 4 - lane << "番目のレーンの音程 >";
 
-			std::string str;
-			if (getInterval(str)) {
-				intervalList.push_back(str);
+			std::string str, intervalStr;
+			std::getline(cin, str);
+			
+			if (toIntervalStr(str, intervalStr)) {
+				intervalList.at(lane) = intervalStr;
 				loopFlag = false;
 			} else {
 				cout << "[!] 音名として正しくありません．\n";
@@ -239,11 +233,9 @@ int main() {
 	while (true) {
 		cout << ">";
 		
-		char buf[6];
 		std::string str;
-		cin.getline(buf, 6, '\n');
-		str = buf;
-		
+		std::getline(cin, str, '\n');
+
 		if (toFraction(str, holdMinLen)) {
 			break;
 		} else {
@@ -264,7 +256,7 @@ int main() {
 
 	{
 		using namespace std;
-		scoreName << classNum;
+		scoreName << classNumStr;
 		scoreName << '_';
 		scoreName << setfill('0') << setw(2) << lt->tm_mon + 1;
 		scoreName << setfill('0') << setw(2) << lt->tm_mday;

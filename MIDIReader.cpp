@@ -140,7 +140,7 @@ namespace midireader {
 	}
 
 	MIDIReader::MIDIReader()
-		: adjustAmplitude(0) {}
+		: adjustAmplitude(0), adjustThreshold(256) {}
 
 	MIDIReader::~MIDIReader() {
 		close();
@@ -196,8 +196,9 @@ namespace midireader {
 		return musicTitle;
 	}
 
-	void MIDIReader::setAdjustmentAmplitude(size_t midiTime) {
+	void MIDIReader::setAdjustmentAmplitude(size_t midiTime, size_t threshold) {
 		adjustAmplitude = midiTime;
+		adjustThreshold = threshold;
 	}
 
 	void MIDIReader::close() {
@@ -239,7 +240,7 @@ namespace midireader {
 			for (auto &note : tracknote) {
 
 				// find the most suitable fraction which express position of the note.
-				ScoreTime scoreTime = calcBestScoreTime(note.time, 256);
+				ScoreTime scoreTime = calcBestScoreTime(note.time, adjustThreshold);
 
 				note.bar = scoreTime.bar;
 				note.posInBar = scoreTime.posInBar;

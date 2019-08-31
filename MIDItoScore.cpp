@@ -35,14 +35,20 @@ namespace miditoscore {
 		// group by lane number
 		for (const auto& note : notes) {
 			int laneIndex = selectNoteLane(format, note);
-			if (laneIndex < 0) {
-				if (note.type == midireader::MidiEvent::NoteOn) {
-					deviatedNotes.push_back(note);
-				}
-
-				ret |= Status::S_EXIST_DEVIATEDNOTES;
-			} else {
+			if (laneIndex >= 0) {
 				laneNotes.at(laneIndex).push_back(note);
+			}
+
+			// enumerize invalid notes
+			if (note.type == midireader::MidiEvent::NoteOn) {
+				if (laneIndex < 0) {
+					deviatedNotes.push_back(note);
+					ret |= Status::S_EXIST_DEVIATEDNOTES;
+				}
+				if (note.posInBar.get().d > format.allowedMaxDivision) {
+					nonDiscreteNotes.push_back(note);
+					ret |= Status::E_EXIST_NONDISCRETENOTES;
+				}
 			}
 		}
 

@@ -128,7 +128,7 @@ namespace midireader {
 
 		// set amplitude in adjusting timing of the note event
 		// notice : When you call this function, please call it before openAndRead()
-		void setAdjustmentAmplitude(size_t midiTime = 0);
+		void setAdjustmentAmplitude(size_t midiTime, size_t threshold = 256);
 
 		void close();
 
@@ -146,7 +146,7 @@ namespace midireader {
 		// for amplitude in adjusting timing of the note event.
 		// default value : 0
 		size_t adjustAmplitude;
-
+		size_t adjustThreshold;
 
 		// for out of range access
 		const std::vector<NoteEvent> dummyEvent;

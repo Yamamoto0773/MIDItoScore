@@ -152,7 +152,7 @@ int main() {
 				filePath.erase(filePath.end() - 1);
 		}
 
-		midir.setAdjustmentAmplitude(2);
+		midir.setAdjustmentAmplitude(2, 1024);
 		ret = midir.openAndRead(filePath);
 
 		if (ret == Status::E_CANNOT_OPEN_FILE) {
@@ -270,6 +270,7 @@ int main() {
 	miditoscore::NoteFormat format;
 	format.holdMinLength = holdMinLen;
 	format.laneAllocation = intervalNumbers;
+	format.allowedMaxDivision = 1024;
 
 	// create score file name
 	std::stringstream scoreName;
@@ -417,6 +418,33 @@ int main() {
 
 				int cnt = 0;
 				auto notes = toscore.getDeviatedNotes();
+				for (auto n : notes) {
+					using namespace std;
+					cout << "小節:"
+						<< setfill('0') << setw(3) << n.bar
+						<< " 小節内位置:"
+						<< n.posInBar.get_str()
+						<< " 音程:"
+						<< (givedIntervalAsStr ?
+							midireader::toIntervalStr(n.interval, isYamaha) : std::to_string(n.interval))
+						<< '\n';
+
+					if (++cnt >= 10)
+						break;
+				}
+
+				if (notes.size() > 10)
+					cout << "...他" << notes.size() - 10 << "コ\n";
+
+				cout << '\n';
+			}
+			if (isInclude(ret, miditoscore::Status::E_EXIST_NONDISCRETENOTES)) {
+				cout << "[!] クォンタイズされていないノーツが存在しています.\n";
+				cout << " -> 許容できる1小節の分割数は" << format.allowedMaxDivision << "です\n";
+				cout << "-- 問題のあるノーツ --\n";
+
+				int cnt = 0;
+				auto notes = toscore.getNonDiscreteNotes();
 				for (auto n : notes) {
 					using namespace std;
 					cout << "小節:"

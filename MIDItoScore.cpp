@@ -45,10 +45,6 @@ namespace miditoscore {
 					deviatedNotes.push_back(note);
 					ret |= Status::S_EXIST_DEVIATEDNOTES;
 				}
-				if (note.posInBar.get().d > format.allowedMaxDivision) {
-					nonDiscreteNotes.push_back(note);
-					ret |= Status::E_EXIST_NONDISCRETENOTES;
-				}
 			}
 		}
 
@@ -110,13 +106,18 @@ namespace miditoscore {
 				if (scoreNotes.size() > 0) {
 					ret |= createScoreString(scoreNotes, scoreString);
 
+					if (scoreString.size() > format.allowedLineLength) {
+						longLines.emplace_back(currentBar, format.laneAllocation.at(lane));
+						ret |= Status::E_EXIST_LONGLINES;
+					}
+
 					// write the score data to file.
 					using namespace std;
 					stream << lane << ':'
 						<< setfill('0') << setw(3) << currentBar << ':'
 						<< scoreString << endl;
 				}
-				
+
 				// ready for next bar
 				beginIt = endIt;
 			}

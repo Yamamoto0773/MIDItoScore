@@ -40,7 +40,7 @@ namespace miditoscore {
 	struct NoteFormat {
 		math::Fraction holdMinLength;
 		std::vector<int> laneAllocation;
-		int allowedMaxDivision;
+		size_t allowedLineLength;
 	};
 
 	enum class NoteType {
@@ -63,7 +63,7 @@ namespace miditoscore {
 		constexpr int E_EXIST_CONCURRENTNOTES = 0b0001;
 		constexpr int E_CANNOT_OPEN_FILE = 0b0010;
 		constexpr int S_EXIST_DEVIATEDNOTES = 0b0100;
-		constexpr int E_EXIST_NONDISCRETENOTES = 0b1000;
+		constexpr int E_EXIST_LONGLINES = 0b1000;
 	};
 
 
@@ -74,6 +74,11 @@ namespace miditoscore {
 
 	class MIDItoScore {
 		using noteevent_const_itr_t = std::vector<midireader::NoteEvent>::const_iterator;
+		struct scoreline_t {
+			int bar, interval;
+			scoreline_t(int b, int i) : bar(b), interval(i) {}
+		};
+
 
 	public:
 		MIDItoScore();
@@ -86,7 +91,7 @@ namespace miditoscore {
 
 		const std::vector<midireader::NoteEvent> &getConcurrentNotes() const { return concurrentNotes; }
 		const std::vector<midireader::NoteEvent>& getDeviatedNotes() const { return deviatedNotes; }
-		const std::vector<midireader::NoteEvent>& getNonDiscreteNotes() const { return nonDiscreteNotes; }
+		const std::vector<scoreline_t>& getLongLines() const { return longLines; }
 		size_t numofHoldNotes(int interval) const;
 		size_t numofHitNotes(int interval) const;
 
@@ -114,11 +119,10 @@ namespace miditoscore {
 			size_t hold;
 		};
 
-
 		NoteFormat noteFormat;
 		std::vector<midireader::NoteEvent> concurrentNotes;
 		std::vector<midireader::NoteEvent> deviatedNotes;
-		std::vector<midireader::NoteEvent> nonDiscreteNotes;
+		std::vector<scoreline_t> longLines;
 		std::vector<NoteAggregate> noteAggregate;
 
 		int selectNoteLane(const NoteFormat &format, const midireader::NoteEvent &note);

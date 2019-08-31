@@ -89,7 +89,7 @@ namespace midireader {
 		int bar;
 		math::Fraction posInBar;
 
-		std::string interval;
+		int interval;
 		int velocity;
 	};
 
@@ -103,7 +103,8 @@ namespace midireader {
 	};
 
 
-
+	std::string toIntervalStr(int noteNum, bool isYamaha);
+	int toIntervalNum(const std::string& str, bool isYamaha);
 
 
 	class MIDIReader {
@@ -113,10 +114,7 @@ namespace midireader {
 
 		~MIDIReader();
 
-		// isYamaha ... specify type of the MIDI note number.
-		// if 440Hz expressed as "A3", pass true (based YAMAHA)
-		// if 440Hz expressed as "A4", pass false (based International)
-		Status openAndRead(const std::string &fileName, bool isYamaha=true);
+		Status openAndRead(const std::string &fileName);
 
 		const MIDIHeader &getHeader() const;
 		// notice: When you want to get the note event of 1st track, call as "getNoteEvent(1)"
@@ -144,9 +142,6 @@ namespace midireader {
 		std::vector<BeatEvent> beatEvent;
 		std::vector<TempoEvent> tempoEvent;
 		std::vector<Track> trackList;
-
-		bool isYamaha;
-
 
 		// for amplitude in adjusting timing of the note event.
 		// default value : 0
@@ -178,8 +173,6 @@ namespace midireader {
 
 
 		const math::Fraction &getBeat(long miditime);
-
-		std::string toIntervalStr(int noteNum, bool isYamaha);
 
 		void eraseAll(std::string &str);
 

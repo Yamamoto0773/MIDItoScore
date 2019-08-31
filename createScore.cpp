@@ -190,12 +190,14 @@ int main() {
 	}
 
 	// get interval
-	cout << "打ち込みに使った音程を入力してください (例:C3, D#3)\n";
+	cout << "打ち込みに使った音程を入力してください\n"
+		<< "(例: 音名で入力する場合:C3,D#3  番号で入力する場合:60, 63)\n";
 
-	std::vector<std::string> intervalList(4);
+	std::vector<std::string> intervalStrings(4);
+	std::vector<int> intervalNumbers(4, -1);
+	bool givedIntervalAsStr = false;
 	for (int lane = 3; lane >= 0; lane--) {
-		loopFlag = true;
-		while (loopFlag) {
+		while (true) {
 			// print lane position;
 			// ex. if i = 1, print "□■□□"
 			for (size_t i = 0; i < 4; i++) {
@@ -207,21 +209,41 @@ int main() {
 
 			cout << " 右から" << 4 - lane << "番目のレーンの音程 >";
 
-			std::string str, intervalStr;
-			std::getline(cin, str);
-			
-			if (toIntervalStr(str, intervalStr)) {
-				intervalList.at(lane) = intervalStr;
-				loopFlag = false;
+			std::string inputStr, intervalStr;
+			std::getline(cin, inputStr);
+
+			int n;
+			if (toIntervalStr(inputStr, intervalStr)) {
+				intervalStrings.at(lane) = intervalStr;
+				givedIntervalAsStr = true;
+				break;
+			} else if (toNumber(inputStr, &n) && n >= 0) {
+				intervalNumbers.at(lane) = n;
+				break;
 			} else {
-				cout << "[!] 音名として正しくありません．\n";
+				cout << "[!] 音程として正しくありません．\n";
 			}
 		}
 	}
 
-	// to upper
-	for (auto &i : intervalList) {
-		std::transform(i.begin(), i.end(), i.begin(), ::toupper);
+	cout << '\n';
+
+	bool isYamaha = false;
+	if (givedIntervalAsStr) {
+		cout << "DAWの一番低い音程は C-2 ですか？ [y/n]\n"
+			<< ">";
+		std::string answer;
+		std::getline(cin, answer);
+		if (answer == "y") {
+			isYamaha = true;
+		}
+
+		// convert interval string to number
+		for (size_t i = 0; i < 4; i++) {
+			if (intervalNumbers.at(i) == -1) {
+				intervalNumbers.at(i) = midireader::toIntervalNum(intervalStrings.at(i), isYamaha);
+			}
+		}
 	}
 
 	// get hold minimal length
@@ -247,7 +269,7 @@ int main() {
 	miditoscore::MIDItoScore toscore;
 	miditoscore::NoteFormat format;
 	format.holdMinLength = holdMinLen;
-	format.laneAllocation = intervalList;
+	format.laneAllocation = intervalNumbers;
 
 	// create score file name
 	std::stringstream scoreName;
@@ -376,9 +398,10 @@ int main() {
 						<< " 小節内位置:"
 						<< n.posInBar.get_str()
 						<< " 音程:"
-						<< n.interval
+						<< (givedIntervalAsStr ? 
+							midireader::toIntervalStr(n.interval, isYamaha) : std::to_string(n.interval))
 						<< '\n';
-
+			
 					if (++cnt >= 10)
 						break;
 				}
@@ -401,7 +424,8 @@ int main() {
 						<< " 小節内位置:"
 						<< n.posInBar.get_str()
 						<< " 音程:"
-						<< n.interval
+						<< (givedIntervalAsStr ?
+							midireader::toIntervalStr(n.interval, isYamaha) : std::to_string(n.interval))
 						<< '\n';
 
 					if (++cnt >= 10)
@@ -417,24 +441,24 @@ int main() {
 
 		cout << "--ノーツ内訳-----\n";
 		cout <<	"    |";
-		for (auto i : intervalList) {
-			cout << std::setfill(' ') << std::setw(4) << i << '|';
+		for (size_t lane = 0; lane < 4; lane++) {
+			cout << std::setfill(' ') << std::setw(4) << lane << '|';
 		}
 		cout << '\n';
 		cout << "hit |";
-		for (auto i : intervalList) {
+		for (auto i : intervalNumbers) {
 			cout << std::setfill(' ') << std::setw(4) << toscore.numofHitNotes(i) << '|';
 		}
 		cout << '\n';
 		cout << "hold|";
-		for (auto i : intervalList) {
+		for (auto i : intervalNumbers) {
 			cout << std::setfill(' ') << std::setw(4) << toscore.numofHoldNotes(i) << '|';
 		}
 		cout << '\n';
 
 		size_t cnt = 0;
 		cout << "all |";
-		for (auto i : intervalList) {
+		for (auto i : intervalNumbers) {
 			cout << std::setfill(' ') << std::setw(4)
 				<< toscore.numofHoldNotes(i) + toscore.numofHitNotes(i) << '|';
 

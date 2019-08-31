@@ -39,7 +39,7 @@ namespace miditoscore {
 
 	struct NoteFormat {
 		math::Fraction holdMinLength;
-		std::vector<std::string> laneAllocation;
+		std::vector<int> laneAllocation;
 	};
 
 	enum class NoteType {
@@ -84,8 +84,8 @@ namespace miditoscore {
 
 		const std::vector<midireader::NoteEvent> &getConcurrentNotes() const { return concurrentNotes; }
 		const std::vector<midireader::NoteEvent> &getDeviatedNotes() const { return deviatedNotes; }
-		size_t numofHoldNotes(const std::string &interval) const;
-		size_t numofHitNotes(const std::string &interval) const;
+		size_t numofHoldNotes(int interval) const;
+		size_t numofHitNotes(int interval) const;
 
 	private:
 

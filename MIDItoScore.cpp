@@ -165,7 +165,7 @@ namespace miditoscore {
 		return ret;
 	}
 
-	size_t MIDItoScore::numofHoldNotes(const std::string & interval) const {
+	size_t MIDItoScore::numofHoldNotes(int interval) const {
 		int pos = -1;
 
 		for (size_t i = 0; i < noteFormat.laneAllocation.size(); i++) {
@@ -180,7 +180,7 @@ namespace miditoscore {
 		return noteAggregate.at(pos).hold;
 	}
 
-	size_t MIDItoScore::numofHitNotes(const std::string & interval) const {
+	size_t MIDItoScore::numofHitNotes(int interval) const {
 		int pos = -1;
 
 		for (size_t i = 0; i < noteFormat.laneAllocation.size(); i++) {

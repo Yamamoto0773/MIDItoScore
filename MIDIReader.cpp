@@ -40,9 +40,107 @@ namespace midireader {
 	bool Success(Status s) { return static_cast<int>(s) >= 0; };
 	bool Failed(Status s) { return static_cast<int>(s) < 0; };
 
+	std::string toIntervalStr(int noteNum, bool isYamaha) {
+		std::string intervalStr;
+
+		// add alphabet
+		switch (noteNum % 12) {
+		case 0:
+		case 1:
+			intervalStr.push_back('C');
+			break;
+		case 2:
+		case 3:
+			intervalStr.push_back('D');
+			break;
+		case 4:
+			intervalStr.push_back('E');
+			break;
+		case 5:
+		case 6:
+			intervalStr.push_back('F');
+			break;
+		case 7:
+		case 8:
+			intervalStr.push_back('G');
+			break;
+		case 9:
+		case 10:
+			intervalStr.push_back('A');
+			break;
+		case 11:
+			intervalStr.push_back('B');
+			break;
+		}
+
+		// add sharp
+		switch (noteNum % 12) {
+		case 1:
+		case 3:
+		case 6:
+		case 8:
+		case 10:
+			intervalStr.push_back('#');
+			break;
+		}
+
+		// add number
+		if (isYamaha)
+			intervalStr += std::to_string(noteNum / 12 - 2);
+		else
+			intervalStr += std::to_string(noteNum / 12 - 1);
+
+		return intervalStr;
+	}
+
+	int toIntervalNum(const std::string& str, bool isYamaha) {
+		int intervalNum = 0;
+
+		switch (std::toupper(str.at(0))) {
+		case 'C':
+			intervalNum = 0;
+			break;
+		case 'D':
+			intervalNum = 2;
+			break;
+		case 'E':
+			intervalNum = 4;
+			break;
+		case 'F':
+			intervalNum = 5;
+			break;
+		case 'G':
+			intervalNum = 7;
+			break;
+		case 'A':
+			intervalNum = 9;
+			break;
+		case 'B':
+			intervalNum = 11;
+			break;
+		default:
+			throw "[toIntervalNum function] invalid argument\n";
+		}
+
+		std::string numStr;
+		if (str.at(1) == '#') {
+			intervalNum++;
+			numStr = str.substr(2);
+		} else {
+			numStr = str.substr(1);
+		}
+
+		if (isYamaha) {
+			intervalNum += (std::stoi(numStr) + 2) * 12;
+		} else {
+			intervalNum += (std::stoi(numStr) + 1) * 12;
+		}
+
+		return intervalNum;
+	}
 
 	MIDIReader::MIDIReader()
-		: isYamaha(true), adjustAmplitude(0) {}
+		: adjustAmplitude(0) {}
 
 	MIDIReader::~MIDIReader() {
 		close();
@@ -52,11 +150,9 @@ namespace midireader {
 		openAndRead(fileName);
 	}
 
-	Status MIDIReader::openAndRead(const std::string &fileName, bool isYamaha) {
+	Status MIDIReader::openAndRead(const std::string &fileName) {
 		if (fileName.empty())
 			return Status::E_INVALID_ARG;
-
-		this->isYamaha = isYamaha;
 
 		if (midi.is_open())
 			close();
@@ -277,62 +373,6 @@ namespace midireader {
 		return beatEvent.cbegin()->beat;
 	}
 
-	std::string MIDIReader::toIntervalStr(int noteNum, bool isYamaha) {
-		std::string intervalStr;
-
-
-		// add alphabet
-		switch (noteNum%12) {
-		case 0:
-		case 1:
-			intervalStr.push_back('C');
-			break;
-		case 2:
-		case 3:
-			intervalStr.push_back('D');
-			break;
-		case 4:
-			intervalStr.push_back('E');
-			break;
-		case 5:
-		case 6:
-			intervalStr.push_back('F');
-			break;
-		case 7:
-		case 8:
-			intervalStr.push_back('G');
-			break;
-		case 9:
-		case 10:
-			intervalStr.push_back('A');
-			break;
-		case 11:
-			intervalStr.push_back('B');
-			break;
-		}
-
-		// add sharp
-		switch (noteNum%12) {
-		case 1:
-		case 3:
-		case 6:
-		case 8:
-		case 10:
-			intervalStr.push_back('#');
-			break;
-		}
-
-		// add number
-		if (isYamaha)
-			intervalStr += std::to_string(noteNum/12 - 2);
-		else
-			intervalStr += std::to_string(noteNum/12 - 1);
-
-
-
-		return intervalStr;
-	}
-
 	void MIDIReader::eraseAll(std::string & str) {
 		str.erase(str.cbegin(), str.cend());
 	}
@@ -462,7 +502,7 @@ namespace midireader {
 				evt.channel = status & 0x0f;
 				// get note number
 				read(tmp, 1);
-				evt.interval = toIntervalStr(btoi(tmp), isYamaha);
+				evt.interval = btoi(tmp);
 				// get velocity
 				read(tmp, 1);
 				evt.velocity = btoi(tmp);

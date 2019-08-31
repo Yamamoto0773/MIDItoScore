@@ -23,29 +23,42 @@ SMF(Standard MIDI File)のうち，フォーマット0と1に対応していま�
 #include "MIDItoScore.hpp"
 
 int main() {
+	using namespace midireader;
+	MIDIReader midi;
 
-	midireader::MIDIReader midi;
-
+	// MIDIファイル読み込み
 	midi.openAndRead("sample.mid");
 
-	miditoscore::MIDItoScore midiToScore;
 	miditoscore::NoteFormat format;
 
-	format.holdMaxVelocity = 50;
-	format.laneAllocation.resize(2);
-	format.laneAllocation = { "C2", "D2" };
+	// 4分音符以上の長さのノーツをを長押しノーツに
+	format.holdMinLength = math::Fraction(1, 4);
 
-	midiToScore.writeScore("score.txt", format, midi, 3);
+	// ノーツが流れるレーンに音程を割り当てる
+	format.laneAllocation = { 
+		toIntervalNum("C3", /* YAMAHA style: */ true),
+		toIntervalNum("D3", /* YAMAHA style: */ true)
+	};
+
+	// 許容できる譜面データ1行の長さ
+	format.allowedLineLength = 128;
+
+	miditoscore::MIDItoScore midiToScore;
+
+	// 譜面データ書き出し
+	for (const auto& track : midi.getTracks()) {
+		midiToScore.writeScore("score.txt", format, midi.getNoteEvent(track.trackNum));
+	}
 
 	return 0;
 }
 
 ```
 上の例では，"sample.mid"というMIDIファイルを"score.txt"という譜面ファイルに書き出しています．
-また，同時に譜面ファイルに書き出すときのフォーマットを指定しています．
+また，同時に譜面データに変換するときのフォーマットを指定しています．
 
-上の例では，ベロシティが30以下のノートイベントを長押しに，
-C5,D5,E5,F5の音程のノートをそれぞれ4つのレーンに対応させています．
+上の例では，4分音符以上の長さのノーツを長押しノーツに，
+C3，D3の音程のノートをそれぞれ2つのレーンに対応させています．
 
 
 ### フォーマット
@@ -75,18 +88,13 @@ kk... ノーツの位置とノーツの種類 (ノーツの位置に合わせて
 
 ### 備考
 三連符配置のあるMIDIファイルを譜面データに書き出すと，1行のデータがとても長くなる場合があります．
-そのような場合には，以下のような処理を追加して下さい．
+そのような場合には，以下の処理をMIDIを読み込む前に追加して下さい．
 ```
-miditoscore::MIDItoScore midiToScore;
-
 // Setting of Timing Adjustment
-midiToScore.setAdjustmentAmplitude(1);
-
-midiToScore.readMidi(fileName);
+midireader.setAdjustmentAmplitude(1);
 ```
-`MIDItoScore::setAdjustmentAmplitude()`は，指定範囲内でノーツのタイミング調整を行う関数です．
-`MIDItoScore::readMidi()`を実行する前に呼び出して下さい．
-引数で調整範囲を指定できますが，通常は1で大丈夫です．
+`MIDIReader::setAdjustmentAmplitude()`は，指定範囲内でノーツのタイミング補正を行う関数です．
+引数で補正範囲を指定できますが，通常は1で大丈夫です．
 
 
 

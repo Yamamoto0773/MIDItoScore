@@ -270,7 +270,7 @@ int main() {
 	miditoscore::NoteFormat format;
 	format.holdMinLength = holdMinLen;
 	format.laneAllocation = intervalNumbers;
-	format.allowedLineLength = 512;
+	format.allowedLineLength = 1024;
 
 	// create score file name
 	std::stringstream scoreName;
@@ -352,7 +352,7 @@ int main() {
 	for (char targetTrackName = '1'; targetTrackName <= '3'; targetTrackName++) {
 
 		int trackNum = -1;
-		const auto tracks = midir.getTrackList();
+		const auto tracks = midir.getTracks();
 		trackNum = searchTrack(tracks, std::string(1, targetTrackName));
 		if (trackNum < 0) {
 			continue;
@@ -374,7 +374,7 @@ int main() {
 			break;
 		}
 
-		auto ret = toscore.writeScore(score, format, midir.getNoteEvent(trackNum), trackNum);
+		auto ret = toscore.writeScore(score, format, midir.getNoteEvent(trackNum));
 
 		score << "\nend\n\n";
 

@@ -188,7 +188,7 @@ namespace midireader {
 		return tempoEvent;
 	}
 
-	const std::vector<Track>& MIDIReader::getTrackList() const {
+	const std::vector<Track>& MIDIReader::getTracks() const {
 		return trackList;
 	}
 

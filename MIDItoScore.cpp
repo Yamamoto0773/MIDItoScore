@@ -13,15 +13,15 @@ namespace miditoscore {
 	MIDItoScore::~MIDItoScore() {}
 
 
-	int MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format, const std::vector<midireader::NoteEvent> &notes, size_t trackNum) {
+	int MIDItoScore::writeScore(const std::string & fileName, const NoteFormat & format, const std::vector<midireader::NoteEvent> &notes) {
 		std::ofstream scoreFile(fileName.c_str(), std::ios::app);
 		if (!scoreFile.is_open())
 			return Status::E_CANNOT_OPEN_FILE;
 
-		return writeScore(scoreFile, format, notes, trackNum);
+		return writeScore(scoreFile, format, notes);
 	}
 
-	int MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format, const std::vector<midireader::NoteEvent> &notes, size_t trackNum) {
+	int MIDItoScore::writeScore(std::ostream & stream, const NoteFormat & format, const std::vector<midireader::NoteEvent> &notes) {
 		using namespace midireader;
 		
 		int ret = Status::S_OK;

@@ -84,8 +84,8 @@ namespace miditoscore {
 		MIDItoScore();
 		~MIDItoScore();
 
-		int writeScore(const std::string &fileName, const NoteFormat &format, const std::vector<midireader::NoteEvent> &notes, size_t trackNum);
-		int writeScore(std::ostream &stream, const NoteFormat &format, const std::vector<midireader::NoteEvent> &notes, size_t trackNum);
+		int writeScore(const std::string &fileName, const NoteFormat &format, const std::vector<midireader::NoteEvent> &notes);
+		int writeScore(std::ostream &stream, const NoteFormat &format, const std::vector<midireader::NoteEvent> &notes);
 
 		int createScoreString(const std::vector<ScoreNote>& scoreNotes, std::string& scoreString);
 

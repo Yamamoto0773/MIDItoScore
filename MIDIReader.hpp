@@ -122,8 +122,7 @@ namespace midireader {
 		const std::vector<std::vector<NoteEvent>> &getNoteEvent() const;
 		const std::vector<BeatEvent> &getBeatEvent() const;
 		const std::vector<TempoEvent> &getTempoEvent() const;
-		// notice: return value is std::vector<Track>
-		const std::vector<Track> &getTrackList() const;
+		const std::vector<Track> &getTracks() const;
 		const std::string &getTitle() const;
 
 		// set amplitude in adjusting timing of the note event

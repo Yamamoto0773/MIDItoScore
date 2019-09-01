@@ -40,7 +40,7 @@ namespace midireader {
 	bool Success(Status s) { return static_cast<int>(s) >= 0; };
 	bool Failed(Status s) { return static_cast<int>(s) < 0; };
 
-	std::string toIntervalStr(int noteNum, bool isYamaha) {
+	std::string toNoteName(int noteNum, PitchNotation style) {
 		std::string intervalStr;
 
 		// add alphabet
@@ -85,18 +85,15 @@ namespace midireader {
 		}
 
 		// add number
-		if (isYamaha)
-			intervalStr += std::to_string(noteNum / 12 - 2);
-		else
-			intervalStr += std::to_string(noteNum / 12 - 1);
+		intervalStr += std::to_string(noteNum / 12 - static_cast<int>(style));
 
 		return intervalStr;
 	}
 
-	int toIntervalNum(const std::string& str, bool isYamaha) {
+	int toNoteNum(const std::string& noteName, PitchNotation style) {
 		int intervalNum = 0;
 
-		switch (std::toupper(str.at(0))) {
+		switch (std::toupper(noteName.at(0))) {
 		case 'C':
 			intervalNum = 0;
 			break;
@@ -123,19 +120,15 @@ namespace midireader {
 		}
 
 		std::string numStr;
-		if (str.at(1) == '#') {
+		if (noteName.at(1) == '#') {
 			intervalNum++;
-			numStr = str.substr(2);
+			numStr = noteName.substr(2);
 		} else {
-			numStr = str.substr(1);
+			numStr = noteName.substr(1);
 		}
 
-		if (isYamaha) {
-			intervalNum += (std::stoi(numStr) + 2) * 12;
-		} else {
-			intervalNum += (std::stoi(numStr) + 1) * 12;
-		}
-
+		intervalNum += (std::stoi(numStr) + static_cast<int>(style)) * 12;
+		
 		return intervalNum;
 	}
 

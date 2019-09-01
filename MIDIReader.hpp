@@ -102,9 +102,16 @@ namespace midireader {
 		std::string name;
 	};
 
+	// Scientific pitch notation
+	// see more: https://en.wikipedia.org/wiki/Scientific_pitch_notation
+	enum class PitchNotation : int {
+		A5_440Hz = 0, // Image-Line style
+		A4_440Hz = 1, // American Standard
+		A3_440Hz = 2  // YAMAHA style
+	};
 
-	std::string toIntervalStr(int noteNum, bool isYamaha);
-	int toIntervalNum(const std::string& str, bool isYamaha);
+	std::string toNoteName(int noteNum, PitchNotation style);
+	int toNoteNum(const std::string& noteName, PitchNotation style);
 
 
 	class MIDIReader {

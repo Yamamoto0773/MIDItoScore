@@ -191,7 +191,7 @@ int main() {
 
 	// get interval
 	cout << "打ち込みに使った音程を入力してください\n"
-		<< "(例: 音名で入力する場合:C3,D#3  番号で入力する場合:60, 63)\n";
+		<< "(例: 音名で入力する場合:C3, D#3  番号で入力する場合:60, 63)\n";
 
 	std::vector<std::string> intervalStrings(4);
 	std::vector<int> intervalNumbers(4, -1);
@@ -228,20 +228,39 @@ int main() {
 
 	cout << '\n';
 
-	bool isYamaha = false;
+	PitchNotation pitchNotation;
 	if (givedIntervalAsStr) {
-		cout << "DAWの一番低い音程は C-2 ですか？ [y/n]\n"
-			<< ">";
-		std::string answer;
-		std::getline(cin, answer);
-		if (answer == "y") {
-			isYamaha = true;
+		cout << "DAWの一番低い音程を入力してください [C-2, C-1, C0のどれか]\n";
+
+		while (true) {
+			cout << ">";
+
+			std::string inputStr, intervalStr;
+			std::getline(cin, inputStr);
+
+			if (toIntervalStr(inputStr, intervalStr)) {
+				intervalStr.front() = toupper(intervalStr.front());
+				if (intervalStr == "C-2") {
+					pitchNotation = PitchNotation::A3_440Hz;
+					break;
+				} else if (intervalStr == "C-1") {
+					pitchNotation = PitchNotation::A4_440Hz;
+					break;
+				} else if (intervalStr == "C0") {
+					pitchNotation = PitchNotation::A5_440Hz;
+					break;
+				} else {
+					cout << "[!] C-2, C-1, C0のどれかを入力してください．\n";
+				}
+			} else {
+				cout << "[!] 音程として正しくありません．\n";
+			}
 		}
 
 		// convert interval string to number
 		for (size_t i = 0; i < 4; i++) {
 			if (intervalNumbers.at(i) == -1) {
-				intervalNumbers.at(i) = midireader::toIntervalNum(intervalStrings.at(i), isYamaha);
+				intervalNumbers.at(i) = midireader::toNoteNum(intervalStrings.at(i), pitchNotation);
 			}
 		}
 	}
@@ -400,7 +419,7 @@ int main() {
 						<< n.posInBar.get_str()
 						<< " 音程:"
 						<< (givedIntervalAsStr ? 
-							midireader::toIntervalStr(n.interval, isYamaha) : std::to_string(n.interval))
+							midireader::toNoteName(n.interval, pitchNotation) : std::to_string(n.interval))
 						<< '\n';
 			
 					if (++cnt >= 10)
@@ -426,7 +445,7 @@ int main() {
 						<< n.posInBar.get_str()
 						<< " 音程:"
 						<< (givedIntervalAsStr ?
-							midireader::toIntervalStr(n.interval, isYamaha) : std::to_string(n.interval))
+							midireader::toNoteName(n.interval, pitchNotation) : std::to_string(n.interval))
 						<< '\n';
 
 					if (++cnt >= 10)
@@ -452,7 +471,7 @@ int main() {
 						<< setfill('0') << setw(3) << l.bar
 						<< " 音程:"
 						<< (givedIntervalAsStr ?
-							midireader::toIntervalStr(l.interval, isYamaha) : std::to_string(l.interval))
+							midireader::toNoteName(l.interval, pitchNotation) : std::to_string(l.interval))
 						<< '\n';
 
 					if (++cnt >= 10)

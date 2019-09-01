@@ -36,8 +36,8 @@ int main() {
 
 	// ノーツが流れるレーンに音程を割り当てる
 	format.laneAllocation = { 
-		toIntervalNum("C3", /* YAMAHA style: */ true),
-		toIntervalNum("D3", /* YAMAHA style: */ true)
+		toNoteNum("C3", PitchNotation::A3_440Hz),
+		toNoteNum("D3", PitchNotation::A3_440Hz)
 	};
 
 	// 許容できる譜面データ1行の長さ

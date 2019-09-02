@@ -661,10 +661,10 @@ int main() {
 	std::basic_ofstream<char32_t> ini;
 	ini.open(musicIDPath/"score.ini");
 
-	ini << "jacket=\"" << imageFilePath.filename().u32string() << "\"\n";
-	ini << "music=\"" << musicFilePath.filename().u32string() << "\"\n";
-	ini << "score=\"" << u8"score.txt" << u8"\"\n";
-	ini << "musicEx=\"" << "\"\n";
+	ini << U"jacket=\"" << imageFilePath.filename().u32string() << U"\"\n";
+	ini << U"music=\"" << musicFilePath.filename().u32string() << U"\"\n";
+	ini << U"score=\"" << U"score.txt" << U"\"\n";
+	ini << U"musicEx=\"" << U"\"\n";
 
 	ini.close();
 

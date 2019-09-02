@@ -274,3 +274,8 @@ main.cpp
 launch.json
 settings.json
 info.plist
+
+
+*.mp3
+*.ini
+*.PNG

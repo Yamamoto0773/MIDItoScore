@@ -3,6 +3,7 @@
 #include <sstream>
 #include <algorithm>
 #include <array>
+#include <filesystem>
 
 
 bool isNumber(char ch) {
@@ -30,7 +31,7 @@ bool isInclude(int val, int flag) {
 	return (val & flag) == flag;
 }
 
-bool toNumber(const std::string& str, int *number = nullptr) {
+bool toNumber(const std::string& str, int* number = nullptr) {
 	size_t numEndedPos;
 	int n;
 	try {
@@ -48,6 +49,26 @@ bool toNumber(const std::string& str, int *number = nullptr) {
 
 	return true;
 }
+
+bool toDouble(const std::string& str, double* number = nullptr) {
+	size_t numEndedPos;
+	double n;
+	try {
+		n = std::stod(str, &numEndedPos);
+	} catch (const std::exception&) {
+		return false;
+	}
+
+	if (numEndedPos != str.length())
+		return false;
+
+	if (number) {
+		*number = n;
+	}
+
+	return true;
+}
+
 
 bool toIntervalStr(std::string &str, std::string &intervalStr) {
 	intervalStr.clear();
@@ -114,22 +135,29 @@ bool toFraction(std::string& str, math::Fraction& frac) {
 
 int main() {
 	using namespace midireader;
+	namespace fs = std::filesystem;
 	using std::cin;
 	using std::cout;
+	using std::string;
+	using std::wstring;
 
 	bool loopFlag = true;
 
 	// get class number
-	cout << "組番号を入力して下さい(3桁)\n";
-	std::string classNumStr;
+	cout << "曲IDを入力して下さい\n";
+	fs::path musicIDPath;
 	while (loopFlag) {
 		cout << ">";
-		std::getline(cin, classNumStr);
 
-		if (classNumStr.length() == 3 && toNumber(classNumStr)) {
+		string input;
+		std::getline(cin, input);
+
+		int n;
+		if (toNumber(input, &n) && n >= 0) {
+			musicIDPath = std::to_string(n);
 			break;
 		} else {
-			cout << "[!] 入力エラーです．3桁の半角数字で入力して下さい\n";
+			cout << "[!] 0以上の半角数字で入力してください\n";
 		}
 	}
 
@@ -291,30 +319,36 @@ int main() {
 	format.laneAllocation = intervalNumbers;
 	format.allowedLineLength = 1024;
 
-	// create score file name
-	std::stringstream scoreName;
-	time_t t = time(nullptr);
-	tm *lt = localtime(&t);
-
-	{
-		using namespace std;
-		scoreName << classNumStr;
-		scoreName << '_';
-		scoreName << setfill('0') << setw(2) << lt->tm_mon + 1;
-		scoreName << setfill('0') << setw(2) << lt->tm_mday;
-		scoreName << ".txt";
-	}
-
 	// ---------------------------------------------------
 	// write score
 
 	cout << "\n譜面データを作成します\n";
 
-	std::ofstream score;
-	score.open(scoreName.str());
+	// create empty directory
+	while (true) {
+		if (!fs::exists(musicIDPath)) {
+			try {
+				fs::create_directory(musicIDPath);
+			} catch (std::exception e) {
+				cout << "[!] ディレクトリ作成に失敗しました\n";
+				return 1;
+			}
+			break;
+		} else {
+			try {
+				fs::remove_all(musicIDPath);
+			} catch (std::exception e) {
+				cout << "[!] ディレクトリの削除に失敗しました\n";
+				return 1;
+			}
+		}
+	}
 
-	score << "begin:header\n\n";
-	score << u8"id:曲ID" << '\n';
+	std::ofstream score;
+	score.open(musicIDPath/"score.txt");
+
+	score << u8"begin:header\n\n";
+	score << u8"id:" << musicIDPath.u8string() << '\n';
 	score << u8"title:曲名" << '\n';
 	score << u8"artist:アーティスト名" << '\n';
 
@@ -516,6 +550,84 @@ int main() {
 
 	score.close();
 	midir.close();
+
+	// ----------------------------------
+	// create ini file
+
+	// get music file path, copy music file
+	cout << "\n書き出した音源へのパスを入力して下さい(\"や\'がついたままでもOKです)\n";
+	fs::path musicFilePath;
+	while (true) {
+		cout << ">";
+		std::string input;
+		std::getline(std::cin, input);
+
+		// erase ' or "
+		if (!input.empty()) {
+			if (input.front() == '\'' || input.front() == '\"')
+				input.erase(input.begin());
+			if (input.back() == '\'' || input.back() == '\"')
+				input.erase(input.end() - 1);
+		}
+
+		try {
+			musicFilePath = input;
+
+			fs::copy_file(
+				musicFilePath,
+				musicIDPath/musicFilePath.filename(),
+				fs::copy_options::overwrite_existing
+			);
+		} catch (std::exception e) {
+			cout << "[i] " << e.what() << "\n";
+			continue;
+		}
+		break;
+	}
+
+	// get image file path, copy image file
+	cout << "\nジャケット写真へのパスを入力して下さい(\"や\'がついたままでもOKです)\n";
+	fs::path imageFilePath;
+	while (true) {
+		cout << ">";
+		std::string input;
+		std::getline(cin, input);
+
+		// erase ' or "
+		if (!input.empty()) {
+			if (input.front() == '\'' || input.front() == '\"')
+				input.erase(input.begin());
+			if (input.back() == '\'' || input.back() == '\"')
+				input.erase(input.end() - 1);
+		}
+
+		try {
+			imageFilePath = fs::path(input);
+
+			fs::copy_file(
+				imageFilePath,
+				musicIDPath/imageFilePath.filename(),
+				fs::copy_options::overwrite_existing
+			);
+		} catch (std::exception e) {
+			cout << "[i] " << e.what() << "\n";
+			continue;
+		}
+		break;
+	}
+	
+	// write to ini file
+	std::basic_ofstream<char32_t> ini;
+	ini.open(musicIDPath/"score.ini");
+
+	ini << "jacket=\"" << imageFilePath.filename().u32string() << "\"\n";
+	ini << "music=\"" << musicFilePath.filename().u32string() << "\"\n";
+	ini << "score=\"" << u8"score.txt" << u8"\"\n";
+	ini << "musicEx=\"" << "\"\n";
+
+	ini.close();
+
+	cout << "\n譜面データのディレクトリを作成しました\n";
 
 	cout << "\nプログラムを終了するにはEnterを押してください\n";
 	cin.ignore();

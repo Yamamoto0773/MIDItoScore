@@ -311,6 +311,44 @@ int main() {
 			cout << "[!] 0より大きい分数を入力してください\n";
 		}
 	}
+	
+	// get chorus timing
+	cout << "\n選曲時に，曲をプレビューするときの再生位置を入力してください (例: 12.3)\n"
+		 << "ループ再生したときに，なるべく違和感のないようにお願いします\n";
+
+	double chorusBegSec;
+	double chorusEndSec;
+	for (int i = 0; i < 2; i++) {
+		while (true) {
+			if (i == 0)
+				cout << "再生開始位置 [s] >";
+			else
+				cout << "再生終了位置 [s] >";
+
+			string input;
+			std::getline(cin, input);
+
+			double d;
+			if (toDouble(input, &d) && d >= 0) {
+				if (i == 0)
+					chorusBegSec = d;
+				else
+					chorusEndSec = d;
+
+				break;
+			} else {
+				cout << "[!] 0以上の小数を入力してください\n";
+			}
+		}
+
+		if (i == 1) {
+			if (chorusBegSec >= chorusEndSec) {
+				cout << "[!] 無効な範囲です\n";
+				i = -1; // loop counter reset
+				continue;
+			}
+		}
+	}
 
 	// set note format
 	miditoscore::MIDItoScore toscore;
@@ -351,6 +389,9 @@ int main() {
 	score << u8"id:" << musicIDPath.u8string() << '\n';
 	score << u8"title:曲名" << '\n';
 	score << u8"artist:アーティスト名" << '\n';
+	score << std::fixed << std::setprecision(3);
+	score << u8"chobeg:" << chorusBegSec << "\n";
+	score << u8"choend:" << chorusEndSec << "\n";
 
 	// write tempo
 	cout << "テンポ情報\n";

@@ -19,7 +19,7 @@ SMF(Standard MIDI File)のうち，フォーマット0と1に対応していま�
 2. MIDItoScoreクラスを使って譜面ファイルに書き出します．
 
 サンプルコードはこんなかんじ
-```
+```cpp
 #include "MIDItoScore.hpp"
 
 int main() {

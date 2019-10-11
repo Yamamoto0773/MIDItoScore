@@ -396,7 +396,7 @@ int main() {
 
     const auto scoreFilePath = musicIDPath / "score.txt";
 #else
-    const auto scoreFilePath = "score_wii.txt";
+    const auto scoreFilePath = musicIDPath.generic_string() + "_wii.txt";
 #endif // BUTTON_VERSION
 
     

@@ -399,7 +399,7 @@ int main() {
     const auto scoreFilePath = "score_wii.txt";
 #endif // BUTTON_VERSION
 
-    
+
     std::ofstream score;
     score.open(scoreFilePath);
 

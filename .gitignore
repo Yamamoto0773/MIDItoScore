@@ -279,3 +279,5 @@ info.plist
 *.mp3
 *.ini
 *.PNG
+*.mid
+*.midi

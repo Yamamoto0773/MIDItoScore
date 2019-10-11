@@ -213,7 +213,7 @@ namespace miditoscore {
         }
 
         if (pos < 0)
-            std::exception("[MIDItoScore::getNoteAggregate] invalid interval");
+            throw std::runtime_error("[MIDItoScore::getNoteAggregate] invalid interval");
 
         return noteAggregate.at(pos);
     }

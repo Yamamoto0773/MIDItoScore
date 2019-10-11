@@ -399,7 +399,7 @@ int main() {
     const auto scoreFilePath = musicIDPath.generic_string() + "_wii.txt";
 #endif // BUTTON_VERSION
 
-    
+
     std::ofstream score;
     score.open(scoreFilePath);
 

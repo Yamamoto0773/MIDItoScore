@@ -5,6 +5,8 @@
 #include <array>
 #include <filesystem>
 
+// #define WII_VERSION
+
 #ifndef WII_VERSION
 #define BUTTON_VERSION
 #endif
@@ -137,6 +139,11 @@ bool toFraction(std::string& str, math::Fraction& frac) {
     return true;
 }
 
+void stop() {
+    std::cout << "\nプログラムを終了するにはEnterを押してください\n";
+    std::cin.ignore();
+}
+
 int main() {
     using namespace midireader;
     namespace fs = std::filesystem;
@@ -202,23 +209,23 @@ int main() {
     switch (ret) {
     case midireader::Status::E_UNSUPPORTED_FORMAT:
         cout << "[!] このフォーマットはサポートされていません.\n";
-        return 0;
+        stop();
     case midireader::Status::E_INVALID_FILE:
         cout << "[!] MIDIファイルが破損しています\n";
-        return 0;
+        stop();
     case midireader::Status::S_OK:
         cout << "読み込み完了\n\n";
         break;
     case midireader::Status::S_NO_EMBED_TIMESIGNATURE:
         cout << "[!] MIDIファイルに拍子情報が埋め込まれていません.\n";
-        return 0;
+        stop();
     default:
         break;
     }
 
     if (midir.getTempoEvent().empty()) {
         cout << "[!] MIDIファイルにテンポ情報が埋め込まれていません.\n";
-        return 0;
+        stop();
     }
 
     // get interval
@@ -381,7 +388,7 @@ int main() {
                 fs::create_directory(musicIDPath);
             } catch (std::exception e) {
                 cout << "[!] ディレクトリ作成に失敗しました\n";
-                return 1;
+                stop();
             }
             break;
         } else {
@@ -389,7 +396,7 @@ int main() {
                 fs::remove_all(musicIDPath);
             } catch (std::exception e) {
                 cout << "[!] ディレクトリの削除に失敗しました\n";
-                return 1;
+                stop();
             }
         }
     }
@@ -469,14 +476,14 @@ int main() {
     score << u8"\nend\n\n";
 #endif
 
-#ifdef WII_VERSION
-    const char* chunkNameSuffix = "-wii";
+#ifdef BUTTON_VERSION
+    char firstTrackName = '1';
 #else
-    const char* chunkNameSuffix = "";
+    char firstTrackName = '4';
 #endif
 
     // write note position
-    for (char targetTrackName = '1'; targetTrackName <= '3'; targetTrackName++) {
+    for (char targetTrackName = firstTrackName; targetTrackName < firstTrackName + 3; targetTrackName++) {
 
         int trackNum = -1;
         const auto tracks = midir.getTracks();
@@ -487,18 +494,33 @@ int main() {
 
         cout << '\n';
         switch (targetTrackName) {
+#ifdef BUTTON_VERSION
         case '1':
             cout << "easy譜面を作成中です... ";
-            score << "begin:easy" << chunkNameSuffix << "\n\n";
+            score << "begin:easy" << "\n\n";
             break;
         case '2':
             cout << "normal譜面を作成中です... ";
-            score << "begin:normal" << chunkNameSuffix << "\n\n";
+            score << "begin:normal" << "\n\n";
             break;
         case '3':
             cout << "hard譜面を作成中です... ";
-            score << "begin:hard" << chunkNameSuffix << "\n\n";
+            score << "begin:hard" << "\n\n";
             break;
+#else
+        case '4':
+            cout << "easy(wii)譜面を作成中です... ";
+            score << "begin:easy-wii" << "\n\n";
+            break;
+        case '5':
+            cout << "normal(wii)譜面を作成中です... ";
+            score << "begin:normal-wii" << "\n\n";
+            break;
+        case '6':
+            cout << "hard(wii)譜面を作成中です... ";
+            score << "begin:hard-wii" << "\n\n";
+            break;
+#endif
         }
 
         auto ret = toscore.writeScore(score, format, midir.getNoteEvent(trackNum));
@@ -735,8 +757,7 @@ int main() {
     cout << "\n譜面データのディレクトリを作成しました\n";
 #endif // BUTTON_VERSION
 
-    cout << "\nプログラムを終了するにはEnterを押してください\n";
-    cin.ignore();
+    stop();
 
     return 0;
 }
